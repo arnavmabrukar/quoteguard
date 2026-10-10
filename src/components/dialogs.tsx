@@ -1,5 +1,15 @@
 "use client";
-import { useState } from "react";
+import { parseSpec } from "@/domain/extract-demo";
+import { sampleReply, sampleText } from "@/domain/fixtures";
+import type {
+  Evidence,
+  LineView,
+  QuoteSnapshot,
+  Spec,
+  Workspace,
+} from "@/domain/types";
+import { api } from "@/lib/api";
+import { money, shortDate } from "@/lib/format";
 import {
   ArrowRight,
   Check,
@@ -8,27 +18,15 @@ import {
   Download,
   FileText,
   FlaskConical,
-  Info,
   Loader2,
   Mail,
-  Plus,
   Printer,
   ShieldCheck,
   Sparkles,
   UploadCloud,
 } from "lucide-react";
-import type {
-  Evidence,
-  LineView,
-  QuoteSnapshot,
-  Spec,
-  Workspace,
-} from "@/domain/types";
-import { sampleReply, sampleText, edgeFixtures } from "@/domain/fixtures";
-import { parseSpec } from "@/domain/extract-demo";
-import { api } from "@/lib/api";
-import { money, shortDate } from "@/lib/format";
-import { Modal, ErrorMessage, Status } from "./ui";
+import { useState } from "react";
+import { ErrorMessage, Modal, Status } from "./ui";
 export type Uploaded = {
   id: string;
   filename: string;
@@ -57,7 +55,7 @@ export function ImportDialog({
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [drag, setDrag] = useState(false),
-    [preview, setPreview] = useState(false);
+    [inputMethod, setInputMethod] = useState<"text" | "file">("text");
   const rows = file?.sheets.find((s) => s.name === sheet)?.rows || [];
   async function upload(f: File) {
     setBusy(true);
@@ -80,7 +78,6 @@ export function ImportDialog({
       );
       const q = h.findIndex((x: string) => /qty|quantity/i.test(x));
       setQc(q < 0 ? null : q);
-      setPreview(true);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -104,7 +101,7 @@ export function ImportDialog({
       } else {
         const result = await api<{ id: string }>("rfqs", {
           customer,
-          title,
+          title: title.trim() || `${customer.trim()} quote`,
           text:
             text ||
             rows
@@ -145,13 +142,11 @@ export function ImportDialog({
   );
   return (
     <Modal
-      title={
-        catalogMode ? "Import supplier catalog" : "New request for quotation"
-      }
+      title={catalogMode ? "Add materials" : "Start a new quote"}
       subtitle={
         catalogMode
           ? "Preview your CSV and map the catalog fields."
-          : "Start with an email, a spreadsheet, or a text-based PDF."
+          : "Add the customer’s request. We’ll organize the items for you to check."
       }
       onClose={onClose}
       wide
@@ -159,7 +154,9 @@ export function ImportDialog({
       <div className="modal-body">
         <div className="demo-inline">
           <FlaskConical size={14} />
-          <span>Local prototype · use synthetic or redacted data only</span>
+          <span>
+            Prototype · use sample requests. Prices and stock are examples.
+          </span>
         </div>
         {!catalogMode && (
           <div className="form-row">
@@ -172,7 +169,7 @@ export function ImportDialog({
               />
             </label>
             <label className="field">
-              RFQ title
+              Quote name (optional)
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -181,45 +178,67 @@ export function ImportDialog({
             </label>
           </div>
         )}
-        <div
-          className={`dropzone ${drag ? "dragging" : ""}`}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDrag(true);
-          }}
-          onDragLeave={() => setDrag(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDrag(false);
-            if (e.dataTransfer.files[0]) void upload(e.dataTransfer.files[0]);
-          }}
-        >
-          <UploadCloud size={27} />
-          <strong>
-            {file ? file.filename : "Drop a request here, or browse files"}
-          </strong>
-          <span>
-            {catalogMode
-              ? "CSV · up to 4 MB"
-              : "CSV, XLSX, TXT or text-based PDF · up to 4 MB"}
-          </span>
-          <input
-            type="file"
-            aria-label="Upload request"
-            accept={catalogMode ? ".csv" : ".txt,.csv,.xlsx,.pdf"}
-            onChange={(e) => {
-              if (e.target.files?.[0]) void upload(e.target.files[0]);
+        {!catalogMode && (
+          <div className="import-methods" aria-label="How to add your request">
+            <button
+              className={inputMethod === "text" ? "active" : ""}
+              disabled={busy}
+              aria-pressed={inputMethod === "text"}
+              onClick={() => {
+                setInputMethod("text");
+                setFile(null);
+              }}
+            >
+              Paste text
+            </button>
+            <button
+              className={inputMethod === "file" ? "active" : ""}
+              disabled={busy}
+              aria-pressed={inputMethod === "file"}
+              onClick={() => setInputMethod("file")}
+            >
+              Upload a file
+            </button>
+          </div>
+        )}
+        {(catalogMode || inputMethod === "file") && (
+          <div
+            className={`dropzone ${drag ? "dragging" : ""}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              setDrag(true);
             }}
-            disabled={busy}
-          />
-        </div>
-        {!catalogMode && !file && (
+            onDragLeave={() => setDrag(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDrag(false);
+              if (e.dataTransfer.files[0]) void upload(e.dataTransfer.files[0]);
+            }}
+          >
+            <UploadCloud size={27} />
+            <strong>{file ? file.filename : "Choose a file"}</strong>
+            <span>
+              {catalogMode
+                ? "CSV · up to 4 MB"
+                : "PDF with selectable text, Excel, CSV or TXT · up to 4 MB. Photos and scanned PDFs aren’t supported."}
+            </span>
+            <input
+              type="file"
+              aria-label="Upload request"
+              accept={catalogMode ? ".csv" : ".txt,.csv,.xlsx,.pdf"}
+              onChange={(e) => {
+                if (e.target.files?.[0]) void upload(e.target.files[0]);
+              }}
+              disabled={busy}
+            />
+          </div>
+        )}
+        {!catalogMode && inputMethod === "text" && (
           <>
-            <div className="divider-label">or paste request text</div>
             <label className="field">
-              <span className="sr-only">RFQ text</span>
+              <span className="sr-only">Customer request</span>
               <textarea
-                rows={7}
+                rows={5}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="Paste the buyer’s request here. Include original descriptions, quantities, and requirements."
@@ -235,26 +254,8 @@ export function ImportDialog({
                 }}
               >
                 <Sparkles size={14} />
-                Use sample RFQ
+                Use a sample request
               </button>
-              <select
-                aria-label="Test edge case"
-                value=""
-                onChange={(e) => {
-                  setText(
-                    edgeFixtures[e.target.value as keyof typeof edgeFixtures],
-                  );
-                  setCustomer("Demo customer");
-                  setTitle(e.target.value);
-                }}
-              >
-                <option value="" disabled>
-                  Try an edge case…
-                </option>
-                {Object.keys(edgeFixtures).map((k) => (
-                  <option key={k}>{k}</option>
-                ))}
-              </select>
             </div>
           </>
         )}
@@ -320,19 +321,13 @@ export function ImportDialog({
             <pre>{text.slice(0, 4000)}</pre>
           </div>
         )}
-        {preview && !file && (
-          <div className="source-preview">
-            <h3>Request preview</h3>
-            <pre>{text}</pre>
-          </div>
-        )}
         <ErrorMessage message={error} />
         <div className="info-note">
           <ShieldCheck size={15} />
           <p>
             {catalogMode
               ? "Imports add new SKUs. Existing catalog items cannot be overwritten through this importer."
-              : "Source text is preserved. Demo extraction recognizes explicit sheet specifications; it does not infer missing units or gauge thickness."}
+              : "Include the material, dimensions and quantity. We’ll flag anything missing so you can confirm it."}
           </p>
         </div>
       </div>
@@ -341,15 +336,6 @@ export function ImportDialog({
           Cancel
         </button>
         <div className="button-group">
-          {!file && !preview && (
-            <button
-              className="button secondary"
-              disabled={!text}
-              onClick={() => setPreview(true)}
-            >
-              Preview text
-            </button>
-          )}
           <button
             className="button primary"
             disabled={
@@ -357,7 +343,7 @@ export function ImportDialog({
               (catalogMode
                 ? !rows.length
                 : !customer.trim() ||
-                  !title.trim() ||
+                  (inputMethod === "file" && !file) ||
                   (!text.trim() && !rows.length))
             }
             onClick={() => void submit()}
@@ -371,7 +357,7 @@ export function ImportDialog({
               ? "Processing…"
               : catalogMode
                 ? "Import catalog"
-                : "Create RFQ"}
+                : "Check my request"}
           </button>
         </div>
       </div>
@@ -420,13 +406,13 @@ export function SpecDialog({
     <Modal
       title={
         clarify
-          ? `Clarify item ${String(line.number).padStart(2, "0")}`
+          ? `Confirm details for item ${line.number}`
           : `Edit item ${String(line.number).padStart(2, "0")}`
       }
       subtitle={
         clarify
-          ? "Turn an ambiguous request into an explicit specification."
-          : "Changes recalculate pricing and invalidate affected reviews."
+          ? "Check the customer’s reply, then confirm the missing details."
+          : "Changes update the price. You’ll need to check the item again."
       }
       onClose={onClose}
       wide
@@ -434,39 +420,42 @@ export function SpecDialog({
       <div className="modal-body">
         {clarify && (
           <>
-            <div className="section-caption spread">
-              <h3>
-                <Mail size={15} />
-                Clarification draft
-              </h3>
-              <button
-                className="text-button"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(draft);
-                    setCopied(true);
-                  } catch {
-                    setError(
-                      "Clipboard unavailable. Select and copy the draft text.",
-                    );
-                  }
-                }}
-              >
-                {copied ? <Check size={14} /> : <Copy size={14} />}{" "}
-                {copied ? "Copied · not sent" : "Copy draft"}
-              </button>
-            </div>
-            <textarea
-              className="draft-text"
-              aria-label="Clarification draft"
-              rows={5}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-            />
-            <p className="microcopy">
-              Copy this draft into your email. QuoteGuard does not send
-              messages.
-            </p>
+            <details className="item-details-disclosure">
+              <summary>Need to ask the customer? Copy a draft email</summary>
+              <div className="section-caption spread">
+                <h3>
+                  <Mail size={15} />
+                  Clarification draft
+                </h3>
+                <button
+                  className="text-button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(draft);
+                      setCopied(true);
+                    } catch {
+                      setError(
+                        "Clipboard unavailable. Select and copy the draft text.",
+                      );
+                    }
+                  }}
+                >
+                  {copied ? <Check size={14} /> : <Copy size={14} />}{" "}
+                  {copied ? "Copied · not sent" : "Copy draft"}
+                </button>
+              </div>
+              <textarea
+                className="draft-text"
+                aria-label="Clarification draft"
+                rows={5}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+              />
+              <p className="microcopy">
+                Copy this draft into your email. QuoteGuard does not send
+                messages.
+              </p>
+            </details>
             <div className="section-caption spread">
               <h3>Buyer’s reply</h3>
               <button
@@ -507,16 +496,14 @@ export function SpecDialog({
                 setChecks([]);
               }}
             >
-              Extract explicit reply fields
+              Fill details from reply
             </button>
             <hr />
           </>
         )}
         <div className="section-caption">
-          <h3>
-            {clarify ? "Confirm interpreted fields" : "Item specifications"}
-          </h3>
-          <span className="mini-label">No implied defaults</span>
+          <h3>{clarify ? "Check these details" : "Item specifications"}</h3>
+          <span className="mini-label">Missing information stays blank</span>
         </div>
         <div className="form-row three">
           <label className="field">
@@ -632,7 +619,7 @@ export function SpecDialog({
               checked={spec.mtr}
               onChange={(e) => update("mtr", e.target.checked)}
             />
-            MTR required
+            Material test report (MTR) required
           </label>
         </div>
         {clarify && (
@@ -673,7 +660,7 @@ export function SpecDialog({
           onClick={() => void save()}
         >
           {busy ? <Loader2 className="spin" size={16} /> : <Check size={16} />}{" "}
-          {clarify ? "Apply clarification" : "Save changes"}
+          {clarify ? "Save confirmed details" : "Save changes"}
         </button>
       </div>
     </Modal>
@@ -764,8 +751,8 @@ export function QuoteDialog({
       title="Quote preview"
       subtitle={
         approved
-          ? "Immutable approved snapshot. Exporting does not deliver this quote."
-          : "Customer-facing draft. Internal costs and markup are excluded."
+          ? "Your approved quote is saved. Download it to share with your customer."
+          : "Check what your customer will see before you approve."
       }
       onClose={onClose}
       wide
@@ -781,7 +768,7 @@ export function QuoteDialog({
             href={`/api/rfqs/${w.rfq.id}/export${approved ? `?version=${encodeURIComponent(quote.id)}` : ""}`}
           >
             <Download size={14} />
-            Export CSV
+            Download spreadsheet
           </a>
           <button
             className="button secondary small"
@@ -910,7 +897,7 @@ export function QuoteDialog({
           <div className="section-caption spread">
             <h3>
               <ShieldCheck size={16} />
-              Human approval
+              Final check
             </h3>
             <button className="text-button" onClick={onTerms}>
               Edit terms
@@ -955,8 +942,8 @@ export function QuoteDialog({
       <div className="modal-footer no-print">
         <span className="microcopy">
           {approved
-            ? "Approved snapshot preserved."
-            : "Draft exports are clearly labeled."}
+            ? "Approved copy saved."
+            : "Downloaded drafts are marked as drafts."}
         </span>
         <div className="button-group">
           <button className="button secondary" onClick={onClose}>

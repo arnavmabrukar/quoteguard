@@ -1,20 +1,18 @@
 "use client";
-import { useEffect, useState } from "react";
+import { dimensionLabel, specDescription } from "@/domain/match-catalog";
+import type { LineView, Workspace } from "@/domain/types";
+import { money } from "@/lib/format";
 import {
-  ArrowRight,
   CheckCircle2,
   ChevronRight,
   FileCheck2,
   Layers3,
   MessageSquareText,
   Plus,
-  Share,
   Smartphone,
   WifiOff,
 } from "lucide-react";
-import type { LineView, Workspace } from "@/domain/types";
-import { dimensionLabel, specDescription } from "@/domain/match-catalog";
-import { money } from "@/lib/format";
+import { useEffect, useState } from "react";
 import { Status } from "./ui";
 export function useCompactLayout() {
   const [compact, setCompact] = useState(false);
@@ -83,7 +81,13 @@ export function MobileLineCards({
         >
           <div className="mobile-card-top">
             <span>ITEM {String(line.number).padStart(2, "0")}</span>
-            <Status status={line.status} />
+            <Status
+              status={
+                line.reviewConfirmed && !line.blockers.length && !line.excluded
+                  ? "Checked"
+                  : line.status
+              }
+            />
           </div>
           <div className="mobile-card-product">
             <span className="mobile-product-icon">
@@ -98,7 +102,7 @@ export function MobileLineCards({
               </p>
               <span>
                 {line.spec.finish || "Finish not specified"}
-                {line.spec.mtr ? " · MTR required" : ""}
+                {line.spec.mtr ? " · Material test report needed" : ""}
                 {line.spec.origin ? ` · ${line.spec.origin} origin` : ""}
               </span>
             </div>
@@ -126,27 +130,27 @@ export function MobileLineCards({
               ) : line.status === "Needs clarification" ? (
                 <>
                   <MessageSquareText size={15} />
-                  Confirm missing specifications
+                  Add missing details
                 </>
               ) : line.status === "Awaiting supplier evidence" ? (
                 <>
                   <FileCheck2 size={15} />
-                  Review supplier evidence
+                  Check documents
                 </>
               ) : line.status === "No catalog match" ? (
                 <>
                   <Layers3 size={15} />
-                  Resolve catalog match
+                  Check material options
                 </>
               ) : line.reviewConfirmed ? (
                 <>
                   <CheckCircle2 size={15} />
-                  Review confirmed
+                  Item checked
                 </>
               ) : (
                 <>
                   <CheckCircle2 size={15} />
-                  Exact match · review item
+                  Check this item
                 </>
               )}
             </span>

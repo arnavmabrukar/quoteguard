@@ -42,7 +42,7 @@ test("phone explanation loading, source facts, generated text, and provider erro
       },
     });
   });
-  await page.goto("/");
+  await page.goto("/#rfq/RFQ-1042");
   await page
     .getByRole("button", { name: "Open item 1:", exact: false })
     .click();
@@ -50,15 +50,15 @@ test("phone explanation loading, source facts, generated text, and provider erro
     name: "Catalog and price explanation",
   });
   await expect(
-    card.getByRole("button", { name: "Explain with AI" }),
+    card.getByRole("button", { name: "Explain this item" }),
   ).toBeEnabled();
-  await card.getByRole("button", { name: "Explain with AI" }).click();
+  await card.getByRole("button", { name: "Explain this item" }).click();
   await expect(card).toContainText("AI · Nicrron");
   await expect(card).toContainText(
     "Test explanation: the selected catalog item",
   );
   await expect(card).toContainText("Why alternatives weren’t accepted");
-  await card.getByText("Checked source facts", { exact: true }).click();
+  await card.getByText("See the facts behind this", { exact: true }).click();
   await expect(card).toContainText("Supplier cost $100.00");
   expect(
     await page.evaluate(
@@ -69,7 +69,7 @@ test("phone explanation loading, source facts, generated text, and provider erro
   await page
     .getByRole("button", { name: "Open item 2:", exact: false })
     .click();
-  await page.getByRole("tab", { name: "Match", exact: true }).click();
+  await page.getByRole("tab", { name: "Overview", exact: true }).click();
   await page.route("**/api/rfqs/*/lines/line-2/explanation", async (route) => {
     if (route.request().method() === "GET") return route.fallback();
     return route.fulfill({
@@ -83,14 +83,14 @@ test("phone explanation loading, source facts, generated text, and provider erro
       },
     });
   });
-  await card.getByRole("button", { name: "Explain with AI" }).click();
+  await card.getByRole("button", { name: "Explain this item" }).click();
   await expect(card.getByRole("alert")).toContainText(
     "temporarily unavailable",
   );
   await expect(
-    card.getByRole("button", { name: "Explain with AI" }),
+    card.getByRole("button", { name: "Explain this item" }),
   ).toBeEnabled();
   await expect(
-    page.getByRole("button", { name: "Resolve clarification", exact: true }),
+    page.getByRole("button", { name: "Add missing details", exact: true }),
   ).toBeEnabled();
 });

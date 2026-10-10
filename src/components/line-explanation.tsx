@@ -1,10 +1,10 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Info, Loader2, Sparkles } from "lucide-react";
-import type { LineView, Workspace } from "@/domain/types";
 import { explanationFacts, type ExplanationView } from "@/domain/explanation";
+import type { LineView, Workspace } from "@/domain/types";
 import { api } from "@/lib/api";
 import { money } from "@/lib/format";
+import { Check, ChevronDown, Info, Loader2, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
   const [view, setView] = useState<ExplanationView | null>(null);
@@ -74,8 +74,8 @@ export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
           <Sparkles size={17} />
         </span>
         <div>
-          <h3>Why this match?</h3>
-          <span>Catalog &amp; price evidence</span>
+          <h3>Need a hand checking this?</h3>
+          <span>A plain-English explanation</span>
         </div>
         {saved && <span className="explanation-ai-label">AI · Nicrron</span>}
       </div>
@@ -102,7 +102,7 @@ export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
             <p>{saved.explanation.evidence.text}</p>
           </div>
           {saved.explanation.alternatives.length > 0 && (
-            <details className="explanation-details" open>
+            <details className="explanation-details">
               <summary>
                 Why alternatives weren’t accepted{" "}
                 <span>{saved.explanation.alternatives.length}</span>
@@ -118,7 +118,7 @@ export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
           )}
           <div className="explanation-stamp">
             <Check size={12} />
-            Saved for version {saved.revision}
+            Explanation saved
             <span>
               {new Date(saved.generatedAt).toLocaleTimeString([], {
                 hour: "numeric",
@@ -130,8 +130,8 @@ export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
       ) : (
         <>
           <p className="explanation-intro">
-            A short explanation of the selected material, its price, and why
-            alternatives don’t fit.
+            Get a short explanation of the material, price and any missing
+            information.
           </p>
           <button
             className="button explanation-generate full"
@@ -149,7 +149,7 @@ export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
               ? "Writing explanation…"
               : loading
                 ? "Checking saved explanation…"
-                : "Explain with AI"}
+                : "Explain this item"}
           </button>
           <p className="explanation-note" role="status">
             {generating
@@ -178,7 +178,7 @@ export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
       <details className="explanation-details explanation-sources">
         <summary>
           <Check size={14} />
-          Checked source facts
+          See the facts behind this
           <ChevronDown size={15} />
         </summary>
         <ul>

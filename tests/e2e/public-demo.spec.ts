@@ -13,7 +13,7 @@ test("no login, browser-specific saves, documents, imports, approvals, and reset
     await expect(page).toHaveURL(/\/$/);
     await expect(
       page.getByRole("heading", {
-        name: "Stainless steel sheets",
+        name: "A clear quote starts here.",
         exact: true,
       }),
     ).toBeVisible();
@@ -44,8 +44,11 @@ test("no login, browser-specific saves, documents, imports, approvals, and reset
       wa = await response.json();
     }
     await mutate({ action: "pricing", markupBps: 2500 });
+    await page.goto("/#rfq/RFQ-1042");
     await page.reload();
-    await expect(page.locator(".summary-strip")).toContainText("$2,625.00");
+    await expect(page.locator(".quote-running-total")).toContainText(
+      "$2,625.00",
+    );
     expect(
       (await (await b.get("/api/rfqs/RFQ-1042")).json()).rfq.markupBps,
     ).toBe(2000);

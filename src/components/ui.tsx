@@ -1,4 +1,5 @@
 "use client";
+import type { LineStatus } from "@/domain/types";
 import * as Dialog from "@radix-ui/react-dialog";
 import {
   AlertCircle,
@@ -9,7 +10,6 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import type { LineStatus } from "@/domain/types";
 export function Status({
   status,
   compact = false,
@@ -22,6 +22,7 @@ export function Status({
     "Approved",
     "Supporting record present",
     "Reviewed",
+    "Checked",
     "Passed",
     "Connected",
   ].includes(status);
@@ -49,7 +50,16 @@ export function Status({
       className={`status ${good ? "good" : warn ? "warn" : bad ? "bad" : "neutral"} ${compact ? "compact" : ""}`}
     >
       <Icon size={12} />
-      {status}
+      {(
+        {
+          "Ready for review": "Ready to check",
+          "Needs clarification": "Details needed",
+          "Awaiting supplier evidence": "Documents needed",
+          "No catalog match": "No material match",
+          "Supporting record present": "Document available",
+          "Supplier confirmation needed": "Supplier check needed",
+        } as Record<string, string>
+      )[status] || status}
     </span>
   );
 }

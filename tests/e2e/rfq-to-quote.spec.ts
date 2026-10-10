@@ -13,25 +13,37 @@ test("clarification → evidence review → human approval → immutable export"
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
+  await page
+    .getByRole("button", { name: "Try a sample quote", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Stainless steel sheets", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".summary-strip")).toContainText("$2,520.00");
+  await expect(page.locator(".quote-running-total")).toContainText("$2,520.00");
   await page.screenshot({
     path: "test-results/workspace-desktop.png",
     fullPage: true,
   });
+  await expect(
+    page.getByRole("region", { name: "Your next step" }),
+  ).toContainText("0 of 3 items checked");
   await page
-    .getByRole("button", { name: "Confirm line review", exact: true })
+    .getByRole("button", { name: "Check next item", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Mark item checked", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Line review confirmed", exact: true }),
+    page.getByRole("button", { name: "Item checked", exact: true }),
   ).toBeDisabled();
   await page
-    .getByRole("button", { name: "Draft clarification", exact: true })
+    .getByRole("button", { name: "Check next item", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Add missing details", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Apply clarification", exact: true }),
+    page.getByRole("button", { name: "Save confirmed details", exact: true }),
   ).toBeDisabled();
   await page
     .getByRole("button", { name: "Use sample buyer reply", exact: true })
@@ -45,41 +57,43 @@ test("clarification → evidence review → human approval → immutable export"
   ])
     await page.getByRole("checkbox", { name: label, exact: true }).check();
   await page
-    .getByRole("button", { name: "Apply clarification", exact: true })
+    .getByRole("button", { name: "Save confirmed details", exact: true })
     .click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(page.locator(".summary-strip")).toContainText("$4,920.00");
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(page.locator(".item-at-a-glance")).toContainText("$2,400.00");
   await page
-    .getByRole("button", { name: "Confirm line review", exact: true })
+    .getByRole("button", { name: "Mark item checked", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Line review confirmed", exact: true }),
+    page.getByRole("button", { name: "Item checked", exact: true }),
   ).toBeDisabled();
-  await page.getByRole("row", { name: /Item 3:/ }).click();
-  await page.getByRole("tab", { name: "Checks", exact: true }).click();
   await page
-    .getByRole("button", { name: "Add sample supplier evidence", exact: true })
+    .getByRole("button", { name: "Check next item", exact: true })
     .click();
-  await expect(
-    page.getByRole("button", { name: /View supporting record/ }),
-  ).toHaveCount(3);
+  await page.getByRole("tab", { name: "Documents", exact: true }).click();
   await page
-    .getByRole("button", { name: /View supporting record/ })
+    .getByRole("button", { name: "Add sample documents", exact: true })
+    .click();
+  await expect(page.getByRole("button", { name: /Open document/ })).toHaveCount(
+    3,
+  );
+  await page
+    .getByRole("button", { name: /Open document/ })
     .first()
     .click();
   await page.getByRole("checkbox", { name: /I reviewed the product/ }).check();
   await page
     .getByRole("button", { name: "Confirm evidence review", exact: true })
     .click();
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(1);
   await page
-    .getByRole("button", { name: "Confirm line review", exact: true })
+    .getByRole("button", { name: "Mark item checked", exact: true })
     .click();
   await expect(
-    page.getByRole("button", { name: "Line review confirmed", exact: true }),
+    page.getByRole("button", { name: "Item checked", exact: true }),
   ).toBeDisabled();
   await page.reload();
-  await expect(page.locator(".summary-strip")).toContainText("$4,920.00");
+  await expect(page.locator(".quote-running-total")).toContainText("$4,920.00");
   await page
     .getByRole("button", { name: "Preview quote", exact: true })
     .click();
@@ -169,17 +183,25 @@ test("new RFQs, CSV mapping, and malicious input preserve explicit demo states",
   request,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "New RFQ", exact: true }).click();
+  await page.getByRole("button", { name: "New quote", exact: true }).click();
   await page.getByLabel("Customer", { exact: true }).fill("Test Fabrication");
-  await page.getByLabel("RFQ title").fill("Browser import test");
-  await page.getByLabel("RFQ text", { exact: true }).fill(sampleText);
-  await page.getByRole("button", { name: "Create RFQ", exact: true }).click();
+  await page.getByLabel("Customer request", { exact: true }).fill(sampleText);
+  await page
+    .getByRole("button", { name: "Upload a file", exact: true })
+    .click();
   await expect(
-    page.getByRole("heading", { name: "Browser import test", exact: true }),
+    page.getByRole("button", { name: "Check my request", exact: true }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Paste text", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Check my request", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Test Fabrication quote", exact: true }),
   ).toBeVisible();
   await page.reload();
   await expect(
-    page.getByRole("heading", { name: "Browser import test", exact: true }),
+    page.getByRole("heading", { name: "Test Fabrication quote", exact: true }),
   ).toBeVisible();
   const malicious = await request.post("/api/rfqs", {
     data: {
@@ -244,20 +266,20 @@ test("secondary screens and smaller-screen inspector are usable", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Catalog", exact: true }).click();
+  await page.getByRole("button", { name: "Materials", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Supplier catalog", exact: true }),
+    page.getByRole("heading", { name: "Materials", exact: true }),
   ).toBeVisible();
   await page.getByLabel("Search catalog").fill("316L");
   await expect(page.locator(".data-table tbody tr")).toHaveCount(2);
-  await page.getByRole("button", { name: "Benchmarks", exact: true }).click();
+  await page.getByRole("button", { name: "Prices", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Price benchmarks", exact: true }),
+    page.getByRole("heading", { name: "Reference prices", exact: true }),
   ).toBeVisible();
   await page.goto("/#rfq/RFQ-1042");
   await page.reload();
   await page.setViewportSize({ width: 1100, height: 900 });
-  await page.getByRole("row", { name: /Item 2:/ }).click();
+  await page.getByRole("button", { name: /Open item 2:/ }).click();
   await expect(page.locator(".inspector")).toBeVisible();
   await page.getByRole("button", { name: "Close item details" }).click();
   await expect(page.locator(".inspector")).toBeHidden();
@@ -278,7 +300,13 @@ test("phone sourcing, labor planning, and work-instruction review persist", asyn
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await page.getByRole("button", { name: "Source", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Try a sample quote", exact: true })
+    .click();
+  await page.getByText("Suppliers & production tools", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Find suppliers", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Find the right supplier." }),
   ).toBeVisible();
@@ -303,7 +331,7 @@ test("phone sourcing, labor planning, and work-instruction review persist", asyn
     path: "test-results/phone-source.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Plan", exact: true }).click();
+  await page.getByRole("button", { name: "Plan costs", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "A plan behind every price." }),
   ).toBeVisible();
@@ -318,7 +346,9 @@ test("phone sourcing, labor planning, and work-instruction review persist", asyn
     path: "test-results/phone-plan.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Make", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Work instructions", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Generate instructions", exact: true })
     .click();
@@ -344,14 +374,14 @@ test("phone sourcing, labor planning, and work-instruction review persist", asyn
   await page.getByRole("button", { name: "Quote", exact: true }).click();
   await page.getByRole("button", { name: /Open item 1:/ }).click();
   await page
-    .getByRole("button", { name: "Confirm line review", exact: true })
+    .getByRole("button", { name: "Mark item checked", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Close item details", exact: true })
     .click();
   await page.getByRole("button", { name: /Open item 2:/ }).click();
   await page
-    .getByRole("button", { name: "Resolve clarification", exact: true })
+    .getByRole("button", { name: "Add missing details", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Use sample buyer reply", exact: true })
@@ -365,20 +395,21 @@ test("phone sourcing, labor planning, and work-instruction review persist", asyn
   ])
     await page.getByRole("checkbox", { name, exact: true }).check();
   await page
-    .getByRole("button", { name: "Apply clarification", exact: true })
+    .getByRole("button", { name: "Save confirmed details", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Confirm line review", exact: true })
+    .getByRole("button", { name: "Mark item checked", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Close item details", exact: true })
     .click();
   await page.getByRole("button", { name: /Open item 3:/ }).click();
+  await page.getByRole("tab", { name: "Documents", exact: true }).click();
   await page
-    .getByRole("button", { name: "Add sample supplier evidence", exact: true })
+    .getByRole("button", { name: "Add sample documents", exact: true })
     .click();
   await page
-    .getByRole("button", { name: /View supporting record/ })
+    .getByRole("button", { name: /Open document/ })
     .first()
     .click();
   await page.getByRole("checkbox", { name: /I reviewed the product/ }).check();
@@ -386,7 +417,7 @@ test("phone sourcing, labor planning, and work-instruction review persist", asyn
     .getByRole("button", { name: "Confirm evidence review", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Confirm line review", exact: true })
+    .getByRole("button", { name: "Mark item checked", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Close item details", exact: true })
@@ -402,7 +433,10 @@ test("phone sourcing, labor planning, and work-instruction review persist", asyn
     .click();
   await expect(page.locator(".quote-state")).toContainText("APPROVED");
   await page.getByRole("button", { name: "Close", exact: true }).click();
-  await page.getByRole("button", { name: "Make", exact: true }).click();
+  await page.getByText("Suppliers & production tools", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Work instructions", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Regenerate draft", exact: true })
     .click();
@@ -435,7 +469,10 @@ test("phone sourcing, labor planning, and work-instruction review persist", asyn
     ),
   ).toBe(true);
   await page.reload();
-  await page.getByRole("button", { name: "Make", exact: true }).click();
+  await page.getByText("Suppliers & production tools", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Work instructions", exact: true })
+    .click();
   await expect(page.locator(".make-status")).toContainText(
     "1 of 3 steps complete",
   );
@@ -461,4 +498,54 @@ test("phone sourcing, labor planning, and work-instruction review persist", asyn
     },
   });
   expect(stale.status()).toBe(422);
+});
+
+test("first visit is clear at phone and desktop sizes", async ({ page }) => {
+  await page.goto("/");
+  for (const width of [360, 390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(
+      page.getByRole("button", { name: "New quote", exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Try a sample quote", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator(".inspector")).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  await page.getByLabel("Search quotes").fill("No matching customer");
+  await expect(
+    page.getByText("No quotes found", { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Search quotes").fill("");
+  await page
+    .getByRole("button", { name: "Try a sample quote", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Your next step" }),
+  ).toContainText("0 of 3 items checked");
+  await page
+    .getByRole("button", { name: "Still to check", exact: true })
+    .click();
+  await expect(page.getByRole("button", { name: /Open item/ })).toHaveCount(3);
+  await page
+    .getByRole("button", { name: "Check next item", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Mark item checked", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Item checked", exact: true }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Close item details", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Your next step" }),
+  ).toContainText("1 of 3 items checked");
+  await expect(page.getByRole("button", { name: /Open item/ })).toHaveCount(2);
 });

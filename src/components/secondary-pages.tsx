@@ -1,11 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { dimensionLabel } from "@/domain/match-catalog";
+import type { Evidence, Workspace } from "@/domain/types";
+import { api } from "@/lib/api";
+import { money, shortDate } from "@/lib/format";
 import {
   ArrowRight,
   CheckCircle2,
   ChevronRight,
   Download,
-  ExternalLink,
   FileText,
   FlaskConical,
   Layers3,
@@ -17,12 +19,9 @@ import {
   ShieldCheck,
   Upload,
 } from "lucide-react";
-import type { Evidence, Workspace } from "@/domain/types";
-import { api } from "@/lib/api";
-import { money, shortDate } from "@/lib/format";
-import { dimensionLabel } from "@/domain/match-catalog";
-import { Empty, ErrorMessage, Status } from "./ui";
+import { useEffect, useState } from "react";
 import { InstallCard } from "./mobile";
+import { Empty, ErrorMessage, Status } from "./ui";
 export function RfqList({
   onOpen,
   onNew,
@@ -31,21 +30,21 @@ export function RfqList({
   onNew: () => void;
 }) {
   const [rows, setRows] = useState<
-      {
-        id: string;
-        customer: string;
-        title: string;
-        count: number;
-        status: string;
-        createdAt: string;
-        updatedAt: string;
-        subtotalCents: number;
-      }[]
-    >([]),
-    [query, setQuery] = useState(""),
-    [filter, setFilter] = useState("All RFQs"),
-    [error, setError] = useState(""),
-    [loading, setLoading] = useState(true);
+    {
+      id: string;
+      customer: string;
+      title: string;
+      count: number;
+      status: string;
+      createdAt: string;
+      updatedAt: string;
+      subtotalCents: number;
+    }[]
+  >([]);
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState("All quotes");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
   useEffect(() => {
     api<typeof rows>("rfqs")
       .then(setRows)
@@ -54,142 +53,149 @@ export function RfqList({
   }, []);
   const filtered = rows.filter(
     (r) =>
-      `${r.id} ${r.customer} ${r.title}`
+      `${r.customer} ${r.title} ${r.id}`
         .toLowerCase()
         .includes(query.toLowerCase()) &&
-      (filter === "All RFQs" || r.status === filter),
+      (filter === "All quotes" ||
+        (filter === "In progress"
+          ? r.status !== "Approved"
+          : r.status === "Approved")),
   );
   return (
-    <>
-      <div className="page-title-row">
-        <div>
-          <div className="eyebrow">YOUR QUOTING WORKSPACE</div>
-          <h1>Requests for quotation</h1>
-          <p>Every request, from first read to final review.</p>
+    <div className="quotes-home">
+      <section className="start-quote-card">
+        <div className="start-quote-copy">
+          <p className="eyebrow">LESS PAPERWORK. MORE MAKING.</p>
+          <h1>A clear quote starts here.</h1>
+          <p>
+            Add your customer’s request. We’ll help you check the materials and
+            prices, one item at a time.
+          </p>
+          <div className="start-quote-actions">
+            <button className="button primary" onClick={onNew}>
+              <Plus size={19} />
+              New quote
+            </button>
+            <button
+              className="button secondary"
+              onClick={() => onOpen("RFQ-1042")}
+            >
+              Try a sample quote
+              <ArrowRight size={16} />
+            </button>
+          </div>
         </div>
-        <button className="button primary" onClick={onNew}>
-          <Plus size={16} />
-          New RFQ
-        </button>
-      </div>
-      <div className="panel">
-        <div className="list-toolbar">
+        <ol className="start-quote-steps">
+          <li>
+            <span>1</span>
+            <div>
+              <strong>Add a request</strong>
+              <p>Paste an email or upload a file.</p>
+            </div>
+          </li>
+          <li>
+            <span>2</span>
+            <div>
+              <strong>Check the items</strong>
+              <p>We point out what needs your attention.</p>
+            </div>
+          </li>
+          <li>
+            <span>3</span>
+            <div>
+              <strong>Finish your quote</strong>
+              <p>Approve, download and share.</p>
+            </div>
+          </li>
+        </ol>
+      </section>
+      <section className="saved-quotes" aria-label="Saved quotes">
+        <div className="simple-section-heading">
+          <div>
+            <h2>
+              Your quotes <span>{rows.length}</span>
+            </h2>
+            <p>Pick up where you left off.</p>
+          </div>
+          <span className="saved-browser-note">
+            <CheckCircle2 size={15} />
+            Saved in this browser
+          </span>
+        </div>
+        <div className="home-list-controls">
           <div className="filter-tabs">
-            {[
-              "All RFQs",
-              "Needs attention",
-              "Ready for review",
-              "Approved",
-            ].map((f) => (
+            {["All quotes", "In progress", "Approved"].map((f) => (
               <button
                 key={f}
+                className={filter === f ? "active" : ""}
+                aria-pressed={filter === f}
                 onClick={() => setFilter(f)}
-                className={f === filter ? "active" : ""}
               >
                 {f}
               </button>
             ))}
           </div>
           <label className="search-field">
-            <Search size={16} />
+            <Search size={17} />
             <input
-              aria-label="Search RFQs"
-              placeholder="Search RFQs…"
+              aria-label="Search quotes"
+              placeholder="Find a customer or quote"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
         </div>
         <ErrorMessage message={error} />
-        <div className="mobile-record-list">
+        <div className="simple-request-list">
           {filtered.map((r) => (
             <button
-              className="mobile-rfq-card"
+              className="simple-request-card"
               key={r.id}
               onClick={() => onOpen(r.id)}
             >
-              <div>
-                <span className="mono">{r.id}</span>
-                <Status status={r.status} />
+              <div className="request-icon">
+                <FileText size={23} />
               </div>
-              <h3>{r.title}</h3>
-              <p>{r.customer}</p>
-              <footer>
-                <span>
-                  {r.count} items · {shortDate(r.createdAt)}
-                </span>
-                <strong>
-                  {money(r.subtotalCents)}
-                  <ChevronRight size={16} />
-                </strong>
-              </footer>
+              <div className="request-title">
+                <div>
+                  <span>{r.customer}</span>
+                  {r.id === "RFQ-1042" && (
+                    <span className="sample-chip">Sample</span>
+                  )}
+                </div>
+                <h3>{r.title}</h3>
+                <p>
+                  {r.count} items · {shortDate(r.updatedAt)}
+                </p>
+              </div>
+              <div className="request-amount">
+                <Status status={r.status} />
+                <strong>{money(r.subtotalCents)}</strong>
+                <small>Subtotal so far</small>
+              </div>
+              <ChevronRight size={19} />
             </button>
           ))}
-        </div>
-        <div className="table-scroll desktop-record-table">
-          <table className="data-table rfq-list">
-            <thead>
-              <tr>
-                <th>RFQ / customer</th>
-                <th>Items</th>
-                <th>Received</th>
-                <th>Status</th>
-                <th>Priced subtotal</th>
-                <th>Last update</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr key={r.id} onClick={() => onOpen(r.id)}>
-                  <td>
-                    <button
-                      className="table-link"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpen(r.id);
-                      }}
-                    >
-                      {r.title}
-                    </button>
-                    <small>
-                      {r.customer} <span className="mono">· {r.id}</span>
-                    </small>
-                  </td>
-                  <td>{r.count}</td>
-                  <td>{shortDate(r.createdAt)}</td>
-                  <td>
-                    <Status status={r.status} />
-                  </td>
-                  <td className="numeric">{money(r.subtotalCents)}</td>
-                  <td>{shortDate(r.updatedAt)}</td>
-                  <td>
-                    <ChevronRight size={16} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
         {loading ? (
           <div className="loading-inline">
             <Loader2 className="spin" size={20} />
-            Loading saved requests…
+            Loading your quotes…
           </div>
         ) : (
           !filtered.length && (
             <Empty
-              title="No requests found"
-              detail="Try another search or create a new RFQ."
+              title="No quotes found"
+              detail="Try a different search or start a new quote above."
             />
           )
         )}
-        <div className="table-bottom">
-          {filtered.length} request{filtered.length !== 1 ? "s" : ""} · saved in
-          your workspace
-        </div>
-      </div>
-    </>
+        <p className="home-save-note">
+          Your work saves automatically in this browser. This prototype uses
+          sample pricing.
+        </p>
+      </section>
+    </div>
   );
 }
 export function CatalogPage({
@@ -215,7 +221,7 @@ export function CatalogPage({
       <div className="page-title-row">
         <div>
           <div className="eyebrow">NORTHLINE METALS</div>
-          <h1>Supplier catalog</h1>
+          <h1>Materials</h1>
           <p>
             Specifications, availability, and supporting records in one place.
           </p>
@@ -391,7 +397,7 @@ export function BenchmarksPage({ w }: { w: Workspace }) {
       <div className="page-title-row">
         <div>
           <div className="eyebrow">PRICING CONTEXT</div>
-          <h1>Price benchmarks</h1>
+          <h1>Reference prices</h1>
           <p>Comparable references, with the context behind every number.</p>
         </div>
         <span className="demo-pill">

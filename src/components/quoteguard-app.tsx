@@ -1,53 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import * as Drawer from "@radix-ui/react-dialog";
-import {
-  ProjectStages,
-  ProjectWorkflow,
-  type Stage,
-} from "./project-workflows";
-import {
-  MobileSummary,
-  MobileLineCards,
-  useCompactLayout,
-  ConnectionStatus,
-} from "./mobile";
-import {
-  Activity,
-  ArrowRight,
-  ArrowUpDown,
-  Building2,
-  Check,
-  CheckCircle2,
-  ChevronDown,
-  ChevronRight,
-  ChevronsUpDown,
-  CircleDollarSign,
-  ClipboardList,
-  Cloud,
-  FileCheck2,
-  FileText,
-  Filter,
-  FlaskConical,
-  History,
-  Info,
-  Layers3,
-  LifeBuoy,
-  Loader2,
-  Mail,
-  MessageSquareText,
-  PanelRightClose,
-  Plus,
-  RefreshCw,
-  Search,
-  Settings,
-  Shield,
-  ShieldCheck,
-  SlidersHorizontal,
-  Sparkles,
-  TriangleAlert,
-  X,
-} from "lucide-react";
+import type { Mutation } from "@/contracts/rfq";
 import type {
   Evidence,
   LineView,
@@ -55,24 +7,44 @@ import type {
   Terms,
   Workspace,
 } from "@/domain/types";
-import type { Mutation } from "@/contracts/rfq";
 import { api } from "@/lib/api";
-import { money, shortDate } from "@/lib/format";
-import { specDescription } from "@/domain/match-catalog";
-import { LineInspector, type InspectorTab } from "./line-inspector";
+import * as Drawer from "@radix-ui/react-dialog";
+import {
+  ArrowRight,
+  CheckCircle2,
+  ChevronsUpDown,
+  CircleDollarSign,
+  ClipboardList,
+  Cloud,
+  FlaskConical,
+  Layers3,
+  LifeBuoy,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Settings,
+  ShieldCheck,
+  TriangleAlert,
+  X,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
   EvidenceDialog,
   ImportDialog,
   QuoteDialog,
   SpecDialog,
 } from "./dialogs";
+import { LineInspector, type InspectorTab } from "./line-inspector";
+import { ConnectionStatus } from "./mobile";
+import type { Stage } from "./project-workflows";
+import { QuoteWorkspace } from "./quote-workspace";
 import {
   BenchmarksPage,
   CatalogPage,
   RfqList,
   SettingsPage,
 } from "./secondary-pages";
-import { Empty, ErrorMessage, Modal, Status } from "./ui";
+import { Empty, ErrorMessage, Modal } from "./ui";
 type Action = Mutation extends infer T
   ? T extends Mutation
     ? Omit<T, "expectedRevision" | "idempotencyKey">
@@ -94,7 +66,7 @@ type Dialog =
 export function QuoteGuardApp() {
   const [w, setW] = useState<Workspace | null>(null),
     [id, setId] = useState("RFQ-1042"),
-    [view, setView] = useState<View>("workspace"),
+    [view, setView] = useState<View>("rfqs"),
     [selected, setSelected] = useState("line-1"),
     [tab, setTab] = useState<InspectorTab>("Match"),
     [dialog, setDialog] = useState<Dialog>(null),
@@ -104,12 +76,7 @@ export function QuoteGuardApp() {
     [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
-    [attention, setAttention] = useState(false),
-    [sort, setSort] = useState("line"),
-    [trust, setTrust] = useState(false),
-    [drawer, setDrawer] = useState(false),
-    [sourceExpanded, setSourceExpanded] = useState(false);
-  const compact = useCompactLayout();
+    [drawer, setDrawer] = useState(false);
   const [stage, setStage] = useState<Stage>("Quote");
   const wRef = useRef(w);
   wRef.current = w;
@@ -145,6 +112,7 @@ export function QuoteGuardApp() {
     if (["rfqs", "catalog", "benchmarks", "settings"].includes(parts[0]))
       setView(parts[0] as View);
     const target = parts[0] === "rfq" && parts[1] ? parts[1] : "RFQ-1042";
+    if (parts[0] === "rfq") setView("workspace");
     void load(target);
   }, []);
   async function act(action: Action) {
@@ -161,8 +129,8 @@ export function QuoteGuardApp() {
       wRef.current = updated;
       notify(
         action.action === "approve"
-          ? "Quote approved. Immutable snapshot saved."
-          : "Changes saved. Checks recalculated.",
+          ? "Quote approved and saved. Ready to download."
+          : "Saved. Your quote is up to date.",
       );
       return updated;
     } catch (e) {
@@ -180,40 +148,15 @@ export function QuoteGuardApp() {
     setId(rfqId);
     setSelected("line-1");
     setView("workspace");
-    setAttention(false);
     setDrawer(false);
     window.history.replaceState(null, "", `/#rfq/${rfqId}`);
     void load(rfqId);
   }
   const line = w?.lines.find((l) => l.id === selected) || w?.lines[0];
-  const rows =
-    w?.lines
-      .filter(
-        (l) =>
-          !attention ||
-          !["Ready for review", "Approved", "Excluded"].includes(l.status),
-      )
-      .sort((a, b) =>
-        sort === "status"
-          ? a.status.localeCompare(b.status)
-          : sort === "price"
-            ? (b.unitPriceCents ?? -1) - (a.unitPriceCents ?? -1)
-            : a.number - b.number,
-      ) || [];
   function selectLine(l: LineView, target?: InspectorTab) {
     setSelected(l.id);
-    if (target) setTab(target);
+    setTab(target || "Match");
     setDrawer(true);
-  }
-  function clarify() {
-    const l = w?.lines.find((l) => l.status === "Needs clarification");
-    if (l) {
-      setSelected(l.id);
-      setDialog("clarify");
-    } else {
-      setSnapshot(null);
-      setDialog("preview");
-    }
   }
   const inspector = w && line && (
     <LineInspector
@@ -236,7 +179,10 @@ export function QuoteGuardApp() {
       }
       onExclude={() => setDialog("exclude")}
       onRestore={() => fire({ action: "restore", lineId: line.id })}
-      onPricing={() => navigate("settings")}
+      onPricing={() => {
+        setDrawer(false);
+        navigate("settings");
+      }}
       onClose={() => setDrawer(false)}
       busy={busy}
       onNext={() => {
@@ -244,14 +190,7 @@ export function QuoteGuardApp() {
           (l) => !l.excluded && !l.reviewConfirmed && l.id !== line.id,
         );
         if (next) {
-          selectLine(
-            next,
-            next.status === "Needs clarification"
-              ? "Source"
-              : next.blockers.length
-                ? "Requirements"
-                : "Match",
-          );
+          selectLine(next, "Match");
         } else {
           setDrawer(false);
           setSnapshot(null);
@@ -263,14 +202,14 @@ export function QuoteGuardApp() {
   return (
     <>
       <ConnectionStatus />
-      <div className="app-shell">
+      <div className="app-shell simple-app">
         <aside className="sidebar">
           <a
-            href="/#rfq/RFQ-1042"
+            href="/#rfqs"
             className="brand"
             onClick={(e) => {
               e.preventDefault();
-              openRfq("RFQ-1042");
+              navigate("rfqs");
             }}
           >
             <span className="brand-mark">
@@ -285,7 +224,7 @@ export function QuoteGuardApp() {
             <span className="company-avatar">N</span>
             <span>
               <strong>Northline Metals</strong>
-              <small>Supplier workspace</small>
+              <small>Your quoting workspace</small>
             </span>
             <ChevronsUpDown size={14} />
           </button>
@@ -293,11 +232,11 @@ export function QuoteGuardApp() {
           <nav>
             {(
               [
-                { key: "rfqs", label: "RFQs", icon: ClipboardList },
-                { key: "catalog", label: "Catalog", icon: Layers3 },
+                { key: "rfqs", label: "Quotes", icon: ClipboardList },
+                { key: "catalog", label: "Materials", icon: Layers3 },
                 {
                   key: "benchmarks",
-                  label: "Benchmarks",
+                  label: "Prices",
                   icon: CircleDollarSign,
                 },
               ] as const
@@ -309,28 +248,20 @@ export function QuoteGuardApp() {
               >
                 <Icon size={18} />
                 {label}
-                {key === "rfqs" && w && (
-                  <span className="nav-count">{w.summary.total}</span>
-                )}
               </button>
             ))}
           </nav>
           <div className="sidebar-bottom">
             <div className="sidebar-promise">
-              <span className="promise-icon">
-                <ShieldCheck size={20} />
-              </span>
-              <strong>Confidence in every quote.</strong>
+              <ShieldCheck size={24} />
+              <strong>From request to quote.</strong>
               <p>
-                Trace the request.
+                Check the details.
                 <br />
-                Check the evidence.
+                Set your price.
                 <br />
-                Keep a human in control.
+                Get it out the door.
               </p>
-              <button className="text-button" onClick={() => setDialog("help")}>
-                Explore the demo <ArrowRight size={13} />
-              </button>
             </div>
             <button
               className={`nav-item ${view === "settings" ? "active" : ""}`}
@@ -339,14 +270,6 @@ export function QuoteGuardApp() {
               <Settings size={18} />
               Settings
             </button>
-            <div className="reviewer">
-              <span className="reviewer-avatar">LR</span>
-              <div>
-                <strong>Workspace owner</strong>
-                <small>Single-reviewer prototype</small>
-              </div>
-              <span className="presence-dot" />
-            </div>
           </div>
         </aside>
         <div className="app-main">
@@ -359,21 +282,16 @@ export function QuoteGuardApp() {
               <span className="topbar-icon">
                 <ClipboardList size={17} />
               </span>
-              <button onClick={() => navigate("rfqs")}>Workspace</button>
-              <ChevronRight size={13} />
-              <button
-                onClick={() => navigate(view === "workspace" ? "rfqs" : view)}
-              >
+              <span>
                 {view === "workspace"
-                  ? "RFQs"
-                  : view[0].toUpperCase() + view.slice(1)}
-              </button>
-              {view === "workspace" && (
-                <>
-                  <ChevronRight size={13} />
-                  <span className="mono">{id}</span>
-                </>
-              )}
+                  ? "Quote details"
+                  : {
+                      rfqs: "Your quotes",
+                      catalog: "Materials",
+                      benchmarks: "Reference prices",
+                      settings: "Settings",
+                    }[view]}
+              </span>
             </div>
             <div className="topbar-right">
               <button
@@ -402,7 +320,7 @@ export function QuoteGuardApp() {
               <span className="topbar-divider" />
               <button
                 className="icon-button"
-                aria-label="Demo walkthrough"
+                aria-label="Help with quoting"
                 onClick={() => setDialog("help")}
               >
                 <LifeBuoy size={18} />
@@ -410,24 +328,12 @@ export function QuoteGuardApp() {
             </div>
           </header>
           <main className="main-content">
-            <div className="demo-banner">
+            <div className="demo-banner simple-demo-banner">
+              <FlaskConical size={15} />
               <span>
-                <FlaskConical size={15} />
-                <strong>
-                  {w?.rfq.mode === "live"
-                    ? "Live interpretation mode"
-                    : "Demo data"}
-                </strong>
-                <span>
-                  {w?.rfq.mode === "live"
-                    ? "Local prototype · sponsor evaluations remain unverified."
-                    : "You’re exploring a sample RFQ. Products, prices, and evidence are synthetic."}
-                </span>
+                <strong>Sample workspace</strong> · Prices, stock and documents
+                are examples.
               </span>
-              <button onClick={() => setDialog("new")}>
-                Try your own RFQ
-                <ArrowRight size={14} />
-              </button>
             </div>
             {error && (
               <div className="global-error">
@@ -444,12 +350,12 @@ export function QuoteGuardApp() {
                 </button>
               </div>
             )}
-            {loading && !w ? (
+            {loading && (!w || view === "workspace") ? (
               <div className="initial-loading">
                 <span className="brand-mark">
                   <ShieldCheck size={27} />
                 </span>
-                <h2>Opening your quoting workspace</h2>
+                <h2>Opening your quotes</h2>
                 <p>Loading saved requests and catalog records…</p>
                 <Loader2 className="spin" size={22} />
               </div>
@@ -457,636 +363,32 @@ export function QuoteGuardApp() {
               w && (
                 <>
                   {view === "workspace" && (
-                    <>
-                      <div
-                        className={`workspace-heading ${stage !== "Quote" ? "secondary-stage" : ""}`}
-                      >
-                        <div>
-                          <div className="rfq-meta">
-                            <span className="mono">{w.rfq.id}</span>
-                            <span className="meta-dot" />
-                            <span>Version {w.rfq.revision}</span>
-                            <Status
-                              status={
-                                w.rfq.approvedVersion
-                                  ? "Approved"
-                                  : w.summary.attention
-                                    ? "Needs attention"
-                                    : "Ready for review"
-                              }
-                              compact
-                            />
-                          </div>
-                          <h1>{w.rfq.title}</h1>
-                          <div className="customer-line">
-                            <Building2 size={15} />
-                            <strong>{w.rfq.customer}</strong>
-                            <span>·</span>
-                            <span>{w.rfq.contact}</span>
-                            <span>·</span>
-                            <span>Received {shortDate(w.rfq.createdAt)}</span>
-                          </div>
-                        </div>
-                        <div className="heading-actions">
-                          <button
-                            className="button secondary"
-                            onClick={() => {
-                              setSnapshot(null);
-                              setDialog("preview");
-                            }}
-                          >
-                            <FileText size={16} />
-                            Preview quote
-                          </button>
-                          <button className="button primary" onClick={clarify}>
-                            {w.summary.clarification ? (
-                              <MessageSquareText size={16} />
-                            ) : (
-                              <ShieldCheck size={16} />
-                            )}{" "}
-                            {w.summary.clarification
-                              ? "Draft clarification"
-                              : w.rfq.approvedVersion
-                                ? "View approved quote"
-                                : "Review quote"}
-                            <ArrowRight size={15} />
-                          </button>
-                        </div>
-                      </div>
-                      <ProjectStages
-                        stage={stage}
-                        onChange={(s) => {
-                          setStage(s);
-                          setDrawer(false);
-                        }}
-                      />
-                      {stage !== "Quote" ? (
-                        <ProjectWorkflow
-                          w={w}
-                          stage={stage}
-                          onQuote={() => setStage("Quote")}
-                        />
-                      ) : (
-                        <>
-                          <div className="workflow">
-                            <div className="workflow-steps">
-                              {[
-                                "Import",
-                                "Extract",
-                                "Match & price",
-                                "Review",
-                              ].map((s, i) => (
-                                <div
-                                  className={`workflow-step ${i < 2 || w.rfq.approvedVersion ? "complete" : i === 2 ? "current" : ""}`}
-                                  key={s}
-                                >
-                                  <span className="step-dot">
-                                    {i < 2 || w.rfq.approvedVersion ? (
-                                      <Check size={11} />
-                                    ) : (
-                                      i + 1
-                                    )}
-                                  </span>
-                                  <span>{s}</span>
-                                  {i < 3 && <span className="step-connector" />}
-                                </div>
-                              ))}
-                            </div>
-                            <span className="workflow-context">
-                              {w.rfq.approvedVersion ? (
-                                <>
-                                  <CheckCircle2 size={13} />
-                                  Human review completed
-                                </>
-                              ) : (
-                                <>
-                                  <span className="small-dot amber" />
-                                  {w.summary.attention
-                                    ? `${w.summary.attention} items need attention`
-                                    : "Ready for human review"}
-                                </>
-                              )}
-                            </span>
-                          </div>
-                          <div className="summary-strip">
-                            {[
-                              {
-                                label: "Line items",
-                                value: w.summary.total,
-                                icon: ClipboardList,
-                                color: "blue",
-                              },
-                              {
-                                label: "Ready for review",
-                                value: w.summary.ready,
-                                icon: CheckCircle2,
-                                color: "green",
-                              },
-                              {
-                                label: "Needs clarification",
-                                value: w.summary.clarification,
-                                icon: MessageSquareText,
-                                color: "amber",
-                              },
-                              {
-                                label: "Missing evidence",
-                                value: w.summary.evidence,
-                                icon: FileCheck2,
-                                color: "amber",
-                              },
-                              {
-                                label: "Priced subtotal",
-                                value: money(w.summary.subtotalCents),
-                                icon: CircleDollarSign,
-                                color: "dark",
-                              },
-                            ].map(({ label, value, icon: Icon, color }) => (
-                              <div className="summary-item" key={label}>
-                                <div>
-                                  <span>{label}</span>
-                                  <Icon size={16} className={color} />
-                                </div>
-                                <strong className={color}>{value}</strong>
-                                {label === "Priced subtotal" && (
-                                  <small>
-                                    Excludes unresolved lines & charges
-                                  </small>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                          <MobileSummary w={w} />
-                          <div
-                            className={`workspace-grid ${drawer ? "drawer-open" : ""}`}
-                          >
-                            <div className="workspace-left">
-                              <section className="panel line-panel">
-                                <div className="panel-heading">
-                                  <h2>
-                                    Line items <span>{w.summary.total}</span>
-                                  </h2>
-                                  <div className="table-controls">
-                                    <button
-                                      className={`filter-button ${attention ? "active" : ""}`}
-                                      onClick={() => setAttention(!attention)}
-                                      aria-pressed={attention}
-                                    >
-                                      <Filter size={13} />
-                                      Needs attention
-                                      {w.summary.attention > 0 && (
-                                        <b>{w.summary.attention}</b>
-                                      )}
-                                    </button>
-                                    <label className="sort-control">
-                                      <ArrowUpDown size={13} />
-                                      <select
-                                        aria-label="Sort line items"
-                                        value={sort}
-                                        onChange={(e) =>
-                                          setSort(e.target.value)
-                                        }
-                                      >
-                                        <option value="line">Line order</option>
-                                        <option value="status">Status</option>
-                                        <option value="price">
-                                          Price: high to low
-                                        </option>
-                                      </select>
-                                    </label>
-                                  </div>
-                                </div>
-                                <MobileLineCards
-                                  lines={rows}
-                                  onSelect={(l) =>
-                                    selectLine(
-                                      l,
-                                      l.status === "Needs clarification"
-                                        ? "Source"
-                                        : l.status ===
-                                            "Awaiting supplier evidence"
-                                          ? "Requirements"
-                                          : "Match",
-                                    )
-                                  }
-                                />
-                                <div className="table-scroll desktop-line-table">
-                                  <table className="line-table">
-                                    <thead>
-                                      <tr>
-                                        <th className="number-cell">#</th>
-                                        <th>Requested item</th>
-                                        <th>Qty</th>
-                                        <th>Catalog match</th>
-                                        <th>Unit price</th>
-                                        <th className="status-column">
-                                          Status
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {rows.map((l) => (
-                                        <tr
-                                          key={l.id}
-                                          className={`${line?.id === l.id ? "selected" : ""} ${l.excluded ? "excluded" : ""}`}
-                                          onClick={() => selectLine(l)}
-                                          onKeyDown={(e) => {
-                                            if (
-                                              e.key === "Enter" ||
-                                              e.key === " "
-                                            ) {
-                                              e.preventDefault();
-                                              selectLine(l);
-                                            }
-                                          }}
-                                          tabIndex={0}
-                                          aria-label={`Item ${l.number}: ${specDescription(l.spec)}, ${l.status}`}
-                                        >
-                                          <td className="number-cell">
-                                            <span>
-                                              {String(l.number).padStart(
-                                                2,
-                                                "0",
-                                              )}
-                                            </span>
-                                          </td>
-                                          <td className="item-cell">
-                                            <strong>
-                                              {specDescription(l.spec)}
-                                            </strong>
-                                            <span className="original-text">
-                                              {l.original}
-                                            </span>
-                                            {l.excluded ? (
-                                              <small className="excluded-reason">
-                                                Excluded: {l.excluded}
-                                              </small>
-                                            ) : (
-                                              <span className="item-tags">
-                                                {l.spec.finish && (
-                                                  <span>{l.spec.finish}</span>
-                                                )}
-                                                {l.spec.mtr && (
-                                                  <span>
-                                                    <FileCheck2 size={10} />
-                                                    MTR
-                                                  </span>
-                                                )}
-                                                {l.spec.origin && (
-                                                  <span>
-                                                    {l.spec.origin} origin
-                                                  </span>
-                                                )}
-                                              </span>
-                                            )}
-                                          </td>
-                                          <td className="quantity-cell">
-                                            <strong>
-                                              {l.spec.quantity ?? "—"}
-                                            </strong>
-                                            <span>
-                                              {l.spec.quantityUnit || "Unknown"}
-                                            </span>
-                                          </td>
-                                          <td className="match-cell">
-                                            {l.match ? (
-                                              <>
-                                                <span className="mono">
-                                                  {l.match.sku}
-                                                </span>
-                                                <small>
-                                                  <CheckCircle2 size={11} />
-                                                  Exact match
-                                                </small>
-                                              </>
-                                            ) : (
-                                              <>
-                                                <span className="unmatched">
-                                                  {l.status ===
-                                                  "Needs clarification"
-                                                    ? "Pending clarification"
-                                                    : "No exact match"}
-                                                </span>
-                                                <small>
-                                                  Review specifications
-                                                </small>
-                                              </>
-                                            )}
-                                          </td>
-                                          <td className="unit-price-cell">
-                                            <strong>
-                                              {money(l.unitPriceCents)}
-                                            </strong>
-                                            {l.unitPriceCents !== null && (
-                                              <small>/ sheet</small>
-                                            )}
-                                          </td>
-                                          <td className="status-column">
-                                            <Status status={l.status} compact />
-                                            <ChevronRight size={14} />
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                                {!rows.length && (
-                                  <Empty
-                                    title={
-                                      attention
-                                        ? "All items are clear"
-                                        : "No extracted items"
-                                    }
-                                    detail={
-                                      attention
-                                        ? "There are no line items requiring clarification or evidence."
-                                        : "Create a new RFQ with explicit sheet specifications."
-                                    }
-                                  />
-                                )}
-                                <div className="line-table-footer">
-                                  <span>
-                                    <Info size={13} />
-                                    Select an item to inspect its source, match,
-                                    and checks.
-                                  </span>
-                                  <span>
-                                    {w.summary.excluded
-                                      ? `${w.summary.excluded} excluded · partial quote`
-                                      : `${w.summary.total} line items`}
-                                  </span>
-                                </div>
-                              </section>
-                              {w.summary.attention > 0 && (
-                                <section className="next-actions">
-                                  <div className="section-caption">
-                                    <span className="attention-icon">
-                                      <Sparkles size={15} />
-                                    </span>
-                                    <h2>Move this quote forward</h2>
-                                    <span>
-                                      {w.summary.attention} open items
-                                    </span>
-                                  </div>
-                                  <div className="action-cards">
-                                    {w.lines
-                                      .filter(
-                                        (l) =>
-                                          ![
-                                            "Ready for review",
-                                            "Approved",
-                                            "Excluded",
-                                          ].includes(l.status),
-                                      )
-                                      .slice(0, 3)
-                                      .map((l) => (
-                                        <button
-                                          key={l.id}
-                                          className="action-card"
-                                          onClick={() => {
-                                            selectLine(
-                                              l,
-                                              l.status === "Needs clarification"
-                                                ? "Source"
-                                                : "Requirements",
-                                            );
-                                            if (
-                                              l.status === "Needs clarification"
-                                            )
-                                              setDialog("clarify");
-                                          }}
-                                        >
-                                          <span
-                                            className={`action-card-icon ${l.status === "Needs clarification" ? "amber" : "blue"}`}
-                                          >
-                                            {l.status ===
-                                            "Needs clarification" ? (
-                                              <MessageSquareText size={18} />
-                                            ) : (
-                                              <FileCheck2 size={18} />
-                                            )}
-                                          </span>
-                                          <div>
-                                            <small>
-                                              ITEM{" "}
-                                              {String(l.number).padStart(
-                                                2,
-                                                "0",
-                                              )}
-                                            </small>
-                                            <strong>
-                                              {l.status ===
-                                              "Needs clarification"
-                                                ? "Confirm missing specifications"
-                                                : l.status ===
-                                                    "No catalog match"
-                                                  ? "Resolve the catalog match"
-                                                  : "Review supplier evidence"}
-                                            </strong>
-                                            <p>
-                                              {l.status ===
-                                              "Needs clarification"
-                                                ? "Thickness and dimension units need confirmation."
-                                                : l.status ===
-                                                    "No catalog match"
-                                                  ? l.blockers[0]
-                                                  : "Product and lot records are needed before approval."}
-                                            </p>
-                                          </div>
-                                          <ArrowRight size={15} />
-                                        </button>
-                                      ))}
-                                  </div>
-                                </section>
-                              )}
-                              <section className="panel source-panel">
-                                <button
-                                  className="source-panel-heading"
-                                  aria-expanded={sourceExpanded}
-                                  onClick={() =>
-                                    setSourceExpanded(!sourceExpanded)
-                                  }
-                                >
-                                  <span className="attachment-icon">
-                                    <FileText size={20} />
-                                  </span>
-                                  <div>
-                                    <strong>Original request</strong>
-                                    <span>
-                                      {w.rfq.documentName} ·{" "}
-                                      {w.rfq.lines.length} extracted items
-                                    </span>
-                                  </div>
-                                  <span className="source-label">
-                                    Source preserved
-                                  </span>
-                                  <ChevronDown
-                                    size={17}
-                                    className={sourceExpanded ? "flipped" : ""}
-                                  />
-                                </button>
-                                {sourceExpanded && (
-                                  <div className="original-document">
-                                    <div className="email-meta">
-                                      <span>From</span>
-                                      {w.rfq.contact}
-                                      <span>Subject</span>
-                                      {w.rfq.title}
-                                    </div>
-                                    <pre>{w.rfq.original}</pre>
-                                    {w.rfq.documentId && (
-                                      <a
-                                        className="text-button"
-                                        href={`/api/documents/${w.rfq.documentId}`}
-                                      >
-                                        Download original document{" "}
-                                        <ArrowRight size={13} />
-                                      </a>
-                                    )}
-                                  </div>
-                                )}
-                              </section>
-                              <section className="panel trust-panel">
-                                <button
-                                  className="trust-heading"
-                                  aria-expanded={trust}
-                                  onClick={() => setTrust(!trust)}
-                                >
-                                  <ShieldCheck size={19} />
-                                  <div>
-                                    <strong>Trust checks</strong>
-                                    <span>
-                                      Deterministic rules, evidence, and
-                                      integration status
-                                    </span>
-                                  </div>
-                                  <span className="trust-summary">
-                                    {w.rfq.guardrail.passed
-                                      ? "Input checked"
-                                      : "Input blocked"}
-                                  </span>
-                                  <ChevronDown
-                                    size={17}
-                                    className={trust ? "flipped" : ""}
-                                  />
-                                </button>
-                                {trust && (
-                                  <div className="trust-details">
-                                    <div>
-                                      <span>Application input guardrail</span>
-                                      <Status
-                                        status={
-                                          w.rfq.guardrail.passed
-                                            ? "Passed"
-                                            : "Failed"
-                                        }
-                                      />
-                                    </div>
-                                    <p>{w.rfq.guardrail.detail}</p>
-                                    <div>
-                                      <span>
-                                        Deterministic match & readiness check
-                                      </span>
-                                      <span className="mono">
-                                        v{w.rfq.revision} · {w.summary.ready}/
-                                        {w.summary.total - w.summary.excluded}{" "}
-                                        ready
-                                      </span>
-                                    </div>
-                                    <div>
-                                      <span>PRISM evaluation</span>
-                                      <Status status={w.rfq.prism.evaluation} />
-                                    </div>
-                                    <div>
-                                      <span>PRISM trace delivery</span>
-                                      <span>{w.rfq.prism.telemetry}</span>
-                                    </div>
-                                    <div>
-                                      <span>Knowledge Base grounding</span>
-                                      <Status status={w.rfq.prism.grounding} />
-                                    </div>
-                                    {w.rfq.prism.traceId && (
-                                      <p className="mono">
-                                        Trace: {w.rfq.prism.traceId}
-                                      </p>
-                                    )}
-                                    <p>
-                                      Local checks are not PRISM evaluations.
-                                      External evaluation and grounding have not
-                                      been verified.{" "}
-                                      {w.requirePrism
-                                        ? "A current PRISM pass is required for approval."
-                                        : "The explicit demo policy permits human approval after local checks."}
-                                    </p>
-                                  </div>
-                                )}
-                              </section>
-                              <section className="recent-activity">
-                                <div className="section-caption spread">
-                                  <h2>
-                                    <History size={15} />
-                                    Recent activity
-                                  </h2>
-                                  {w.versions.length > 0 && (
-                                    <select
-                                      aria-label="View approved quote version"
-                                      value=""
-                                      onChange={async (e) => {
-                                        try {
-                                          setSnapshot(
-                                            await api<QuoteSnapshot>(
-                                              `quotes/${encodeURIComponent(e.target.value)}`,
-                                            ),
-                                          );
-                                          setDialog("preview");
-                                        } catch (err) {
-                                          setError((err as Error).message);
-                                        }
-                                      }}
-                                    >
-                                      <option value="">
-                                        Approved versions ({w.versions.length})
-                                      </option>
-                                      {w.versions.map((v) => (
-                                        <option key={v.id} value={v.id}>
-                                          {v.id}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  )}
-                                </div>
-                                {w.history.slice(0, 2).map((e) => (
-                                  <div className="activity-row" key={e.id}>
-                                    <span className="activity-check">
-                                      <Check size={11} />
-                                    </span>
-                                    <div>
-                                      <strong>{e.action}</strong>
-                                      <p>{e.detail}</p>
-                                    </div>
-                                    <span>v{e.revision}</span>
-                                  </div>
-                                ))}
-                              </section>
-                            </div>
-                            {!compact && inspector}
-                          </div>
-                          <div className="workspace-footer">
-                            <span>
-                              <Shield size={13} />
-                              Every quote has a source. Every approval has a
-                              person.
-                            </span>
-                            <button
-                              className="text-button muted"
-                              onClick={() => setDialog("new")}
-                            >
-                              <Plus size={13} />
-                              New RFQ
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </>
+                    <QuoteWorkspace
+                      w={w}
+                      stage={stage}
+                      onStage={(s) => {
+                        setStage(s);
+                        setDrawer(false);
+                      }}
+                      onBack={() => navigate("rfqs")}
+                      onSelect={(item) => selectLine(item, "Match")}
+                      onPreview={() => {
+                        setSnapshot(null);
+                        setDialog("preview");
+                      }}
+                      onVersion={async (quoteId) => {
+                        try {
+                          setSnapshot(
+                            await api<QuoteSnapshot>(
+                              `quotes/${encodeURIComponent(quoteId)}`,
+                            ),
+                          );
+                          setDialog("preview");
+                        } catch (e) {
+                          setError((e as Error).message);
+                        }
+                      }}
+                    />
                   )}
                   {view === "rfqs" && (
                     <RfqList onOpen={openRfq} onNew={() => setDialog("new")} />
@@ -1127,8 +429,8 @@ export function QuoteGuardApp() {
       <nav className="mobile-bottom-nav" aria-label="Main navigation">
         {(
           [
-            { key: "rfqs", label: "RFQs", icon: ClipboardList },
-            { key: "catalog", label: "Catalog", icon: Layers3 },
+            { key: "rfqs", label: "Quotes", icon: ClipboardList },
+            { key: "catalog", label: "Materials", icon: Layers3 },
             { key: "benchmarks", label: "Prices", icon: CircleDollarSign },
             { key: "settings", label: "Settings", icon: Settings },
           ] as const
@@ -1152,7 +454,7 @@ export function QuoteGuardApp() {
           </button>
         ))}
       </nav>
-      {compact && (
+      {
         <Drawer.Root
           open={drawer && view === "workspace"}
           onOpenChange={setDrawer}
@@ -1170,7 +472,7 @@ export function QuoteGuardApp() {
             </Drawer.Content>
           </Drawer.Portal>
         </Drawer.Root>
-      )}
+      }
       {dialog === "new" && (
         <ImportDialog
           onClose={() => setDialog(null)}
@@ -1233,15 +535,7 @@ export function QuoteGuardApp() {
             const next = w.lines.find(
               (l) => !l.excluded && (!l.reviewConfirmed || l.blockers.length),
             );
-            if (next)
-              selectLine(
-                next,
-                next.status === "Needs clarification"
-                  ? "Source"
-                  : next.blockers.length
-                    ? "Requirements"
-                    : "Match",
-              );
+            if (next) selectLine(next, "Match");
           }}
           onTerms={() => setDialog("terms")}
         />
@@ -1323,7 +617,6 @@ export function QuoteGuardApp() {
                   setSelected("line-1");
                   setView("workspace");
                   setDialog(null);
-                  setAttention(false);
                   notify("Demo restored to its original state.");
                 } catch (e) {
                   setError((e as Error).message);
@@ -1347,20 +640,20 @@ export function QuoteGuardApp() {
           <div className="modal-body walkthrough">
             {[
               [
-                "Inspect the exact match",
-                "Item 01 matches SS-304-060-2B. See its source, $120 unit price, and supporting demo MTR. Confirm the line review.",
+                "Check the first item",
+                "Open item 01 to see its material, quantity and price. Use Explain this item for help, then mark it checked.",
               ],
               [
-                "Clarify the ambiguous request",
-                "Open item 02, choose Use sample buyer reply, confirm the field groups, then apply the clarification and review the line.",
+                "Fill in missing details",
+                "Open item 02 and choose Add missing details. Use the sample reply, confirm the details, then check the item.",
               ],
               [
-                "Review supplier evidence",
-                "Open item 03 → Checks. Add sample supplier evidence, view it, and explicitly confirm its review. Then confirm the line review.",
+                "Check the documents",
+                "Open item 03 → Documents. Add sample documents, open them and confirm your review. Then mark the item checked.",
               ],
               [
                 "Approve and export",
-                "Preview the quote, confirm your approval, and export CSV or use Print / save as PDF. A material edit creates a new revision.",
+                "Preview the quote, confirm your approval, and export CSV or use Print / save as PDF. Changes to the request require another review.",
               ],
             ].map(([title, body], i) => (
               <div key={title}>
@@ -1373,7 +666,7 @@ export function QuoteGuardApp() {
             ))}
             <div className="demo-inline">
               <FlaskConical size={15} />
-              Sponsor evaluations and Knowledge Base grounding are unverified.
+              This workspace uses sample materials, prices and documents.
             </div>
           </div>
           <div className="modal-footer">

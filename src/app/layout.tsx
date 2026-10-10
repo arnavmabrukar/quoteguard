@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "QuoteGuard · RFQ workspace",
+  title: "QuoteGuard · Simple quoting",
   robots: { index: false, follow: false },
   description:
     "From messy RFQs to confident quotes. An evidence-backed quotation workspace.",

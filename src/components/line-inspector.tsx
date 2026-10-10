@@ -1,12 +1,13 @@
 "use client";
-import { useState } from "react";
+import { dimensionLabel, specDescription } from "@/domain/match-catalog";
+import type { Evidence, LineView, Workspace } from "@/domain/types";
+import { money } from "@/lib/format";
 import {
   ArrowDownRight,
   ArrowRight,
   Check,
   CheckCircle2,
   ChevronRight,
-  ExternalLink,
   FileCheck2,
   FileText,
   History,
@@ -20,17 +21,10 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import type { LineView, Workspace, Evidence } from "@/domain/types";
-import { dimensionLabel, specDescription } from "@/domain/match-catalog";
-import { money } from "@/lib/format";
-import { Status } from "./ui";
+import { useState } from "react";
 import { LineExplanation } from "./line-explanation";
-export type InspectorTab =
-  | "Source"
-  | "Match"
-  | "Price"
-  | "Requirements"
-  | "History";
+import { Status } from "./ui";
+export type InspectorTab = "Source" | "Match" | "Requirements";
 export function LineInspector({
   w,
   line,
@@ -99,18 +93,16 @@ export function LineInspector({
             ? `${dimensionLabel(line.spec.thickness)} × ${dimensionLabel(line.spec.width)} × ${dimensionLabel(line.spec.length)}`
             : "Dimensions need confirmation"}
         </div>
-        <Status status={line.status} />
+        <Status
+          status={
+            line.reviewConfirmed && !line.blockers.length && !line.excluded
+              ? "Checked"
+              : line.status
+          }
+        />
       </div>
       <div className="inspector-tabs" role="tablist" aria-label="Item details">
-        {(
-          [
-            "Source",
-            "Match",
-            "Price",
-            "Requirements",
-            "History",
-          ] as InspectorTab[]
-        ).map((t) => (
+        {(["Match", "Source", "Requirements"] as InspectorTab[]).map((t) => (
           <button
             key={t}
             role="tab"
@@ -118,11 +110,27 @@ export function LineInspector({
             className={tab === t ? "active" : ""}
             onClick={() => setTab(t)}
           >
-            {t === "Requirements" ? "Checks" : t}
+            {
+              {
+                Match: "Overview",
+                Source: "Specifications",
+                Requirements: "Documents",
+              }[t]
+            }
           </button>
         ))}
       </div>
-      <div className="inspector-body" role="tabpanel" aria-label={tab}>
+      <div
+        className="inspector-body"
+        role="tabpanel"
+        aria-label={
+          {
+            Match: "Overview",
+            Source: "Specifications",
+            Requirements: "Documents",
+          }[tab]
+        }
+      >
         {tab === "Source" && (
           <>
             <div className="section-caption">
@@ -139,7 +147,7 @@ export function LineInspector({
               <span>• {line.location}</span>
             </div>
             <div className="section-caption spread">
-              <h3>Extracted specifications</h3>
+              <h3>Requested specifications</h3>
               <button className="text-button" onClick={onEdit}>
                 <Pencil size={12} />
                 Edit
@@ -162,8 +170,8 @@ export function LineInspector({
             <div className="info-note">
               <Info size={14} />
               <p>
-                Values are grounded in the original request. Unknown fields stay
-                empty until you confirm them.
+                These details come from the customer’s request. Missing
+                information stays blank until you confirm it.
               </p>
             </div>
             {Object.values(line.provenance).some(
@@ -187,108 +195,156 @@ export function LineInspector({
         )}
         {tab === "Match" && (
           <>
-            <LineExplanation w={w} line={line} />
-            <div className="section-caption">
-              <Layers3 size={15} />
-              <h3>
-                {line.match
-                  ? "Selected catalog match"
-                  : "Closest catalog candidate"}
-              </h3>
-            </div>
-            <div className={`match-card ${line.match ? "" : "uncertain"}`}>
-              <div className="match-card-top">
-                <span className="product-mini">
-                  <Layers3 size={21} />
-                </span>
-                <span>
-                  <strong className="mono">
-                    {matched?.item.sku || "No candidate"}
-                  </strong>
-                  <small>
-                    {matched?.item.grade} stainless steel ·{" "}
-                    {matched?.item.finish}
-                  </small>
-                </span>
-                {line.match && <CheckCircle2 className="green" size={18} />}
+            <div className="item-at-a-glance">
+              <div>
+                <span>Quantity</span>
+                <strong>
+                  {line.spec.quantity ?? "Not confirmed"}{" "}
+                  {line.spec.quantityUnit === "sheet"
+                    ? "sheets"
+                    : line.spec.quantityUnit || ""}
+                </strong>
               </div>
-              <div className="match-card-bottom">
-                <span>
-                  {line.match
-                    ? "Exact attributes matched"
-                    : "Not selected · confirmation needed"}
-                </span>
-                <span>{matched?.item.stock} in stock</span>
+              <div>
+                <span>Price per sheet</span>
+                <strong>
+                  {line.unitPriceCents === null
+                    ? "Needs details"
+                    : money(line.unitPriceCents)}
+                </strong>
+              </div>
+              <div>
+                <span>Item total</span>
+                <strong>{money(line.subtotalCents)}</strong>
               </div>
             </div>
-            <div className="section-caption">
-              <h3>Specification comparison</h3>
-            </div>
-            <div className="comparison">
-              <div className="comparison-header">
-                <span>Attribute</span>
-                <span>Requested</span>
-                <span>Catalog</span>
-              </div>
-              {matched?.checks.map((c) => (
-                <div className={`comparison-row ${c.state}`} key={c.field}>
-                  <span>{c.field}</span>
-                  <span>{c.request}</span>
-                  <span>
-                    {c.catalog}
-                    {c.state === "agree" ? (
-                      <Check size={12} />
-                    ) : c.state === "different" ? (
-                      <X size={12} />
-                    ) : (
-                      <Minus size={12} />
-                    )}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="info-note">
-              <ShieldCheck size={15} />
+            <div
+              className={`item-next-note ${line.blockers.length ? "needs-action" : ""}`}
+            >
+              <strong>
+                {line.excluded
+                  ? "Left out of this quote"
+                  : line.reviewConfirmed && !line.blockers.length
+                    ? "You’ve checked this item"
+                    : line.status === "Needs clarification"
+                      ? "A few details are missing"
+                      : line.blockers.length
+                        ? "Something needs checking"
+                        : "Check the match, then mark this item checked"}
+              </strong>
               <p>
-                {line.match
-                  ? "Matched using exact specifications. Availability is checked across all lines using this SKU."
-                  : "A nearby product is only a candidate. Gauge numbers and missing units are never assumed."}
+                {line.excluded ||
+                  line.blockers[0] ||
+                  "The material matches the request. Review the specifications and price before continuing."}
               </p>
             </div>
-            <button
-              className="disclosure"
-              onClick={() => setAlternatives(!alternatives)}
-              aria-expanded={alternatives}
-            >
-              <span>
-                Alternative candidates <b>{line.candidates.length - 1}</b>
-              </span>
-              <ChevronRight
-                size={15}
-                className={alternatives ? "rotated" : ""}
-              />
-            </button>
-            {alternatives &&
-              line.candidates
-                .filter((c) => c.item.sku !== matched?.item.sku)
-                .map((c) => (
-                  <div className="alternative" key={c.item.sku}>
-                    <strong className="mono">{c.item.sku}</strong>
-                    <span className="rejected">
-                      {c.exact ? "Exact alternative" : "Rejected"}
+            <LineExplanation w={w} line={line} />
+            <details className="item-details-disclosure">
+              <summary>Compare material specifications</summary>
+              <div className="section-caption">
+                <Layers3 size={15} />
+                <h3>
+                  {line.match
+                    ? "Selected catalog match"
+                    : "Closest catalog candidate"}
+                </h3>
+              </div>
+              <div className={`match-card ${line.match ? "" : "uncertain"}`}>
+                <div className="match-card-top">
+                  <span className="product-mini">
+                    <Layers3 size={21} />
+                  </span>
+                  <span>
+                    <strong className="mono">
+                      {matched?.item.sku || "No candidate"}
+                    </strong>
+                    <small>
+                      {matched?.item.grade} stainless steel ·{" "}
+                      {matched?.item.finish}
+                    </small>
+                  </span>
+                  {line.match && <CheckCircle2 className="green" size={18} />}
+                </div>
+                <div className="match-card-bottom">
+                  <span>
+                    {line.match
+                      ? "Exact attributes matched"
+                      : "Not selected · confirmation needed"}
+                  </span>
+                  <span>{matched?.item.stock} in stock</span>
+                </div>
+              </div>
+              <div className="section-caption">
+                <h3>Specification comparison</h3>
+              </div>
+              <div className="comparison">
+                <div className="comparison-header">
+                  <span>Attribute</span>
+                  <span>Requested</span>
+                  <span>Catalog</span>
+                </div>
+                {matched?.checks.map((c) => (
+                  <div className={`comparison-row ${c.state}`} key={c.field}>
+                    <span>{c.field}</span>
+                    <span>{c.request}</span>
+                    <span>
+                      {c.catalog}
+                      {c.state === "agree" ? (
+                        <Check size={12} />
+                      ) : c.state === "different" ? (
+                        <X size={12} />
+                      ) : (
+                        <Minus size={12} />
+                      )}
                     </span>
-                    <p>
-                      {c.checks
-                        .filter((x) => x.state === "different")
-                        .map((x) => `${x.field}: ${x.catalog}`)
-                        .join(" · ") || "Unknown fields prevent acceptance."}
-                    </p>
                   </div>
                 ))}
+              </div>
+              <div className="info-note">
+                <ShieldCheck size={15} />
+                <p>
+                  {line.match
+                    ? "Matched using exact specifications. Availability is checked across all lines using this SKU."
+                    : "A nearby product is only a candidate. Gauge numbers and missing units are never assumed."}
+                </p>
+              </div>
+              <button
+                className="disclosure"
+                onClick={() => setAlternatives(!alternatives)}
+                aria-expanded={alternatives}
+              >
+                <span>
+                  Alternative candidates{" "}
+                  <b>{Math.max(0, line.candidates.length - 1)}</b>
+                </span>
+                <ChevronRight
+                  size={15}
+                  className={alternatives ? "rotated" : ""}
+                />
+              </button>
+              {alternatives &&
+                line.candidates
+                  .filter((c) => c.item.sku !== matched?.item.sku)
+                  .map((c) => (
+                    <div className="alternative" key={c.item.sku}>
+                      <strong className="mono">{c.item.sku}</strong>
+                      <span className="rejected">
+                        {c.exact ? "Exact alternative" : "Rejected"}
+                      </span>
+                      <p>
+                        {c.checks
+                          .filter((x) => x.state === "different")
+                          .map((x) => `${x.field}: ${x.catalog}`)
+                          .join(" · ") || "Unknown fields prevent acceptance."}
+                      </p>
+                    </div>
+                  ))}
+            </details>
           </>
         )}
-        {tab === "Price" && (
-          <>
+        {tab === "Match" && (
+          <details className="item-details-disclosure">
+            <summary>How the price is calculated</summary>
             <div className="section-caption">
               <h3>Price calculation</h3>
               <span className="mini-label">USD / sheet</span>
@@ -361,13 +417,13 @@ export function LineInspector({
               Demo prices are synthetic, not current market prices. Markup is
               applied to cost; it is not gross margin.
             </p>
-          </>
+          </details>
         )}
         {tab === "Requirements" && (
           <>
             <div className="section-caption">
               <FileCheck2 size={16} />
-              <h3>Requested requirements</h3>
+              <h3>Required documents & checks</h3>
             </div>
             <div className="requirement-list">
               {line.requirements.map((r, i) => (
@@ -394,7 +450,7 @@ export function LineInspector({
                       }
                     >
                       <FileText size={13} />
-                      View supporting record
+                      Open document
                       <ArrowRight size={13} />
                     </button>
                   )}
@@ -410,7 +466,7 @@ export function LineInspector({
                   disabled={busy}
                 >
                   <Plus size={15} />
-                  Add sample supplier evidence
+                  Add sample documents
                 </button>
               )}
             <div className="info-note">
@@ -422,8 +478,9 @@ export function LineInspector({
             </div>
           </>
         )}
-        {tab === "History" && (
-          <>
+        {tab === "Source" && (
+          <details className="item-details-disclosure">
+            <summary>Item history</summary>
             <div className="section-caption">
               <History size={16} />
               <h3>Item activity</h3>
@@ -448,7 +505,7 @@ export function LineInspector({
                   </div>
                 ))}
             </div>
-          </>
+          </details>
         )}
       </div>
       <div className="inspector-footer">
@@ -466,7 +523,7 @@ export function LineInspector({
         ) : line.status === "Needs clarification" ? (
           <button className="button primary full" onClick={onClarify}>
             <Sparkles size={15} />
-            Resolve clarification
+            Add missing details
             <ArrowRight size={15} />
           </button>
         ) : line.blockers.length ? (
@@ -474,9 +531,17 @@ export function LineInspector({
             <p className="microcopy">{line.blockers[0]}</p>
             <button
               className="button secondary full"
-              onClick={() => setTab("Requirements")}
+              onClick={() =>
+                setTab(
+                  line.status === "No catalog match"
+                    ? "Source"
+                    : "Requirements",
+                )
+              }
             >
-              Review requirements
+              {line.status === "No catalog match"
+                ? "Check specifications"
+                : "Check documents"}
               <ArrowRight size={15} />
             </button>
           </>
@@ -487,9 +552,7 @@ export function LineInspector({
             disabled={busy || line.reviewConfirmed || !!w.rfq.approvedVersion}
           >
             <CheckCircle2 size={16} />
-            {line.reviewConfirmed
-              ? "Line review confirmed"
-              : "Confirm line review"}
+            {line.reviewConfirmed ? "Item checked" : "Mark item checked"}
           </button>
         )}
         {line.reviewConfirmed && (
@@ -497,7 +560,7 @@ export function LineInspector({
             className="button secondary full next-item-button"
             onClick={onNext}
           >
-            Continue to next item
+            Check next item
             <ArrowRight size={15} />
           </button>
         )}

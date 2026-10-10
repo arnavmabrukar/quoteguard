@@ -61,7 +61,14 @@ export function ProjectStages({
           className={stage === name ? "active" : ""}
         >
           <Icon size={17} />
-          {name}
+          {
+            {
+              Quote: "Quote",
+              Source: "Find suppliers",
+              Plan: "Plan costs",
+              Make: "Work instructions",
+            }[name]
+          }
         </button>
       ))}
     </nav>

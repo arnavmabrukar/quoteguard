@@ -75,3 +75,6 @@ Optional private deployments can set `PUBLIC_DEMO=false`, `AUTH_REQUIRED=true`, 
 6. Edit the RFQ or plan to verify that prior approvals cannot silently apply to changed work.
 
 See [feature coverage](docs/feature-coverage.md), [integration status](docs/integration-status.md), [architecture](docs/architecture.md), and [limitations](docs/limitations.md).
+
+### Simple quoting interface
+The home screen starts with **New quote** or **Try a sample quote**. Add a customer request by pasting text or uploading a supported file, then check each item and finish the quote. Item review uses Overview, Specifications and Documents; AI help is available with **Explain this item**. The progress count tracks actual item reviews, not just successful material matches. Supplier comparison, cost planning and work instructions remain available under **Suppliers & production tools**.
