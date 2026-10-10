@@ -6388,3 +6388,436 @@ hr {
     min-height: 48px;
   }
 }
+
+/* Spec HUD (inspector tab) */
+.hud {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hud-pill {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 9px;
+  border: 1px solid #cfe7dc;
+  background: #edf8f2;
+  color: var(--green);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.hud-live {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+}
+.hud-sheet {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background-color: #fbfcfe;
+  background-size: 24px 24px;
+  background-image:
+    linear-gradient(to right, #2563eb0d 1px, transparent 1px),
+    linear-gradient(to bottom, #2563eb0d 1px, transparent 1px);
+}
+.hud-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.hud-sheet blockquote {
+  margin: 10px 0 12px;
+  padding: 9px 11px;
+  border-left: 3px solid var(--blue);
+  background: var(--blue-bg);
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.hud-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.hud-fields > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--panel);
+  min-width: 0;
+}
+.hud-fields > div.bad {
+  border-color: #f0d9a8;
+  background: #fffaf0;
+}
+.hud-fields span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--muted);
+}
+.hud-fields strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.hud-fields .bad strong {
+  color: var(--amber);
+}
+.hud-fields small {
+  font-size: 9px;
+  color: #8c9aaf;
+}
+.hud-pin {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--amber);
+  color: #fff;
+  font-style: normal;
+  font-size: 9px;
+  font-weight: 700;
+}
+.hud-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+.hud-section h3 {
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #6e88ab;
+}
+.hud-count {
+  padding: 3px 7px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.hud-count.warn {
+  background: #fff0ed;
+  color: var(--red);
+}
+.hud-count.good {
+  background: #edf8f2;
+  color: var(--green);
+}
+.hud-alert {
+  display: flex;
+  gap: 9px;
+  padding: 9px 11px;
+  border: 1px solid #f0d9a8;
+  background: #fffaf0;
+  border-radius: 8px;
+  color: var(--amber);
+}
+.hud-alert.good {
+  border-color: #cfe7dc;
+  background: #edf8f2;
+  color: var(--green);
+}
+.hud-alert svg {
+  flex: none;
+  margin-top: 1px;
+}
+.hud-alert p {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.hud-alert strong {
+  color: var(--text);
+}
+.hud-card {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 11px;
+}
+.hud-card.stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+.hud-card-row {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+}
+.hud-card > div {
+  flex: 1;
+  min-width: 0;
+}
+.hud-card h4 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
+}
+.hud-card small {
+  display: block;
+  margin-top: 2px;
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.hud-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+.hud-num.warn {
+  background: var(--amber);
+}
+.hud-num.good {
+  background: var(--green);
+}
+.hud-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.hud-table th,
+.hud-table td {
+  text-align: left;
+  padding: 6px 7px;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.hud-table th {
+  color: var(--muted);
+  font-weight: 500;
+  background: var(--bg);
+}
+.hud-table tr.different td:last-child {
+  color: var(--red);
+  font-weight: 600;
+}
+.hud-table tr.unknown td:last-child {
+  color: var(--amber);
+}
+.blank-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fbfcfe;
+}
+.hud-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hud-page {
+  max-width: 1180px;
+}
+.hud-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.hud-line-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin: 16px 0;
+  padding-bottom: 2px;
+}
+.hud-line-strip button {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  font-size: 12px;
+  font-weight: 600;
+}
+.hud-line-strip button.active {
+  border-color: var(--blue);
+  background: var(--blue-bg);
+}
+.hud-split {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+@media (min-width: 981px) {
+  .hud-split {
+    grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+  }
+}
+.hud-review {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  padding: 14px;
+  min-width: 0;
+}
+.hud-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.hud-footer > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.hud-footer span,
+.hud-footer small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.hud-footer strong {
+  font-size: 20px;
+  letter-spacing: -0.4px;
+}
+.hud-viewer {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  overflow: hidden;
+  min-width: 0;
+}
+.hud-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.hud-pager,
+.hud-zoom {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+  font-size: 11px;
+  font-weight: 600;
+}
+.hud-pager button,
+.hud-zoom button {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  height: 32px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+.hud-pager button:hover,
+.hud-zoom button:hover {
+  background: var(--bg);
+}
+.hud-pager span,
+.hud-zoom span {
+  padding: 0 10px;
+  line-height: 32px;
+  background: var(--bg);
+}
+.hud-chip {
+  padding: 5px 8px;
+  border-radius: 5px;
+  background: #f1f3f6;
+  color: var(--muted);
+  font-size: 10px;
+}
+.hud-layers {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+.hud-layers label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  min-height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+.hud-layers label.on {
+  border-color: #bcd0f7;
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+.hud-canvas {
+  position: relative;
+  overflow: auto;
+  height: 520px;
+  background-color: #fbfcfe;
+  background-size: 24px 24px;
+  background-image:
+    linear-gradient(to right, #2563eb0d 1px, transparent 1px),
+    linear-gradient(to bottom, #2563eb0d 1px, transparent 1px);
+}
+.hud-drawing {
+  display: block;
+  margin: 0 auto;
+  min-width: 480px;
+}
+.hud-drawing text {
+  font-family: ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+}
+.hud-pin-g {
+  cursor: pointer;
+}
+.hud-status-bar {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 9px 14px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+}
+.hud-status-bar b {
+  color: var(--text);
+}
+.hud-status-bar .bad {
+  color: var(--red);
+}
+.hud-note {
+  margin-left: auto;
+  font-size: 10px;
+}
