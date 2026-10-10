@@ -6392,6 +6392,14 @@ hr {
 .hud-table tr.unknown td:last-child {
   color: var(--amber);
 }
+.blank-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #fbfcfe;
+}
 .hud-actions {
   display: flex;
   gap: 8px;

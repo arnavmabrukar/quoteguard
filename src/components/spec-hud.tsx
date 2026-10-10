@@ -11,6 +11,7 @@ import type { LineView, Provenance, Workspace } from "@/domain/types";
 import { dimensionLabel } from "@/domain/match-catalog";
 import type { InspectorTab } from "./line-inspector";
 import { SpecViewer } from "./spec-drawing";
+import { BlankPreview } from "./blank-preview";
 import { money } from "@/lib/format";
 import { Status } from "./ui";
 
@@ -306,6 +307,7 @@ export function SpecHudPage({
                 onClarify={() => onClarify(line.id)}
                 onOpenTab={(t) => onOpenLine(line.id, t)}
               />
+              <BlankPreview w={w} line={line} />
               <footer className="hud-footer">
                 <div>
                   <span>Priced subtotal</span>
