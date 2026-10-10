@@ -35,7 +35,7 @@ import {
   SpecDialog,
 } from "./dialogs";
 import { LineInspector, type InspectorTab } from "./line-inspector";
-import { ConnectionStatus } from "./mobile";
+import { ConnectionStatus, useCompactLayout } from "./mobile";
 import type { Stage } from "./project-workflows";
 import { QuoteWorkspace } from "./quote-workspace";
 import {
@@ -77,6 +77,7 @@ export function QuoteGuardApp() {
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
     [drawer, setDrawer] = useState(false);
+  const compact = useCompactLayout();
   const [stage, setStage] = useState<Stage>("Quote");
   const wRef = useRef(w);
   wRef.current = w;
@@ -202,7 +203,7 @@ export function QuoteGuardApp() {
   return (
     <>
       <ConnectionStatus />
-      <div className="app-shell simple-app">
+      <div className="app-shell restored-app">
         <aside className="sidebar">
           <a
             href="/#rfqs"
@@ -365,6 +366,8 @@ export function QuoteGuardApp() {
                   {view === "workspace" && (
                     <QuoteWorkspace
                       w={w}
+                      inspector={!compact && drawer ? inspector : null}
+                      selected={selected}
                       stage={stage}
                       onStage={(s) => {
                         setStage(s);
@@ -454,7 +457,7 @@ export function QuoteGuardApp() {
           </button>
         ))}
       </nav>
-      {
+      {compact && (
         <Drawer.Root
           open={drawer && view === "workspace"}
           onOpenChange={setDrawer}
@@ -472,7 +475,7 @@ export function QuoteGuardApp() {
             </Drawer.Content>
           </Drawer.Portal>
         </Drawer.Root>
-      }
+      )}
       {dialog === "new" && (
         <ImportDialog
           onClose={() => setDialog(null)}

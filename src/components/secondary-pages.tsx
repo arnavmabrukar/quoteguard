@@ -146,7 +146,7 @@ export function RfqList({
           </label>
         </div>
         <ErrorMessage message={error} />
-        <div className="simple-request-list">
+        <div className="simple-request-list mobile-record-list">
           {filtered.map((r) => (
             <button
               className="simple-request-card"
@@ -176,6 +176,51 @@ export function RfqList({
               <ChevronRight size={19} />
             </button>
           ))}
+        </div>
+        <div className="table-scroll desktop-record-table">
+          <table className="data-table rfq-list">
+            <thead>
+              <tr>
+                <th>Quote / customer</th>
+                <th>Items</th>
+                <th>Received</th>
+                <th>Status</th>
+                <th>Priced subtotal</th>
+                <th>Last update</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => (
+                <tr key={r.id} onClick={() => onOpen(r.id)}>
+                  <td>
+                    <button
+                      className="table-link"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpen(r.id);
+                      }}
+                    >
+                      {r.title}
+                    </button>
+                    <small>
+                      {r.customer} <span className="mono">· {r.id}</span>
+                    </small>
+                  </td>
+                  <td>{r.count}</td>
+                  <td>{shortDate(r.createdAt)}</td>
+                  <td>
+                    <Status status={r.status} />
+                  </td>
+                  <td className="numeric">{money(r.subtotalCents)}</td>
+                  <td>{shortDate(r.updatedAt)}</td>
+                  <td>
+                    <ChevronRight size={16} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
         {loading ? (
           <div className="loading-inline">

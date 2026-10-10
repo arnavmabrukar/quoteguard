@@ -59,7 +59,8 @@ test("clarification → evidence review → human approval → immutable export"
   await page
     .getByRole("button", { name: "Save confirmed details", exact: true })
     .click();
-  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator(".inspector")).toBeVisible();
   await expect(page.locator(".item-at-a-glance")).toContainText("$2,400.00");
   await page
     .getByRole("button", { name: "Mark item checked", exact: true })
@@ -85,7 +86,8 @@ test("clarification → evidence review → human approval → immutable export"
   await page
     .getByRole("button", { name: "Confirm evidence review", exact: true })
     .click();
-  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator(".inspector")).toBeVisible();
   await page
     .getByRole("button", { name: "Mark item checked", exact: true })
     .click();

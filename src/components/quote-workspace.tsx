@@ -1,12 +1,15 @@
 "use client";
 import type { LineView, Workspace } from "@/domain/types";
 import { money } from "@/lib/format";
+import { specDescription } from "@/domain/match-catalog";
+import type { ReactNode } from "react";
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   CheckCircle2,
   ChevronDown,
+  ChevronRight,
   FileText,
   History,
 } from "lucide-react";
@@ -17,7 +20,7 @@ import {
   ProjectWorkflow,
   type Stage,
 } from "./project-workflows";
-import { Empty } from "./ui";
+import { Empty, Status } from "./ui";
 
 export function QuoteWorkspace({
   w,
@@ -27,6 +30,8 @@ export function QuoteWorkspace({
   onSelect,
   onPreview,
   onVersion,
+  inspector,
+  selected,
 }: {
   w: Workspace;
   stage: Stage;
@@ -35,6 +40,8 @@ export function QuoteWorkspace({
   onSelect: (line: LineView) => void;
   onPreview: () => void;
   onVersion: (id: string) => void;
+  inspector: ReactNode;
+  selected?: string;
 }) {
   const [pendingOnly, setPendingOnly] = useState(false);
   const included = w.lines.filter((l) => !l.excluded);
@@ -150,78 +157,182 @@ export function QuoteWorkspace({
               {w.rfq.guardrail.detail}
             </div>
           )}
-          <section className="quote-item-section" aria-label="Quote items">
-            <div className="simple-section-heading">
-              <h2>
-                Items to quote <span>{w.summary.total}</span>
-              </h2>
-              <button
-                className={`pending-toggle ${pendingOnly ? "active" : ""}`}
-                aria-pressed={pendingOnly}
-                onClick={() => setPendingOnly(!pendingOnly)}
+          <div
+            className={`workspace-grid restored-workspace-grid ${inspector ? "has-inspector" : ""}`}
+          >
+            <div className="workspace-left">
+              <section
+                className="quote-item-section panel line-panel"
+                aria-label="Quote items"
               >
-                Still to check
-              </button>
-            </div>
-            <MobileLineCards lines={rows} onSelect={onSelect} />
-            {!rows.length && (
-              <Empty
-                title={pendingOnly ? "Every item is checked" : "No items found"}
-                detail={
-                  pendingOnly
-                    ? "You can finish your quote above."
-                    : "Add a request with material descriptions and quantities."
-                }
-              />
-            )}
-          </section>
-          <details className="simple-disclosure">
-            <summary>
-              <FileText size={18} />
-              <span>Customer’s original request</span>
-              <ChevronDown size={17} />
-            </summary>
-            <div className="simple-disclosure-body">
-              <p>{w.rfq.documentName}</p>
-              <pre>{w.rfq.original}</pre>
-              {w.rfq.documentId && (
-                <a
-                  className="text-button"
-                  href={`/api/documents/${w.rfq.documentId}`}
-                >
-                  Download original document <ArrowRight size={14} />
-                </a>
-              )}
-            </div>
-          </details>
-          <details className="simple-disclosure">
-            <summary>
-              <History size={18} />
-              <span>Activity & saved quotes</span>
-              <ChevronDown size={17} />
-            </summary>
-            <div className="simple-disclosure-body">
-              {w.versions.map((v) => (
-                <button
-                  key={v.id}
-                  className="button secondary saved-quote-link"
-                  onClick={() => onVersion(v.id)}
-                >
-                  Open approved quote {v.id}
-                  <ArrowRight size={14} />
-                </button>
-              ))}
-              {w.history.slice(0, 6).map((event) => (
-                <div className="simple-activity" key={event.id}>
-                  <CheckCircle2 size={16} />
-                  <div>
-                    <strong>{event.action}</strong>
-                    <p>{event.detail}</p>
-                  </div>
+                <div className="simple-section-heading">
+                  <h2>
+                    Items to quote <span>{w.summary.total}</span>
+                  </h2>
+                  <button
+                    className={`pending-toggle ${pendingOnly ? "active" : ""}`}
+                    aria-pressed={pendingOnly}
+                    onClick={() => setPendingOnly(!pendingOnly)}
+                  >
+                    Still to check
+                  </button>
                 </div>
-              ))}
+                <MobileLineCards lines={rows} onSelect={onSelect} />
+                <div className="table-scroll desktop-line-table">
+                  <table className="line-table">
+                    <thead>
+                      <tr>
+                        <th className="number-cell">#</th>
+                        <th>Requested item</th>
+                        <th>Qty</th>
+                        <th>Material match</th>
+                        <th>Unit price</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((item) => (
+                        <tr
+                          key={item.id}
+                          className={`${inspector && selected === item.id ? "selected" : ""} ${item.excluded ? "excluded" : ""}`}
+                          onClick={() => onSelect(item)}
+                        >
+                          <td className="number-cell">
+                            <span>{String(item.number).padStart(2, "0")}</span>
+                          </td>
+                          <td className="item-cell">
+                            <button
+                              className="table-link"
+                              aria-label={`Open item ${item.number}: ${specDescription(item.spec)}, ${item.status}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onSelect(item);
+                              }}
+                            >
+                              {specDescription(item.spec)}
+                            </button>
+                            <span className="original-text">
+                              {item.original}
+                            </span>
+                            <span className="item-tags">
+                              {item.spec.finish && (
+                                <span>{item.spec.finish}</span>
+                              )}
+                              {item.spec.mtr && <span>MTR</span>}
+                              {item.spec.origin && (
+                                <span>{item.spec.origin} origin</span>
+                              )}
+                            </span>
+                          </td>
+                          <td className="quantity-cell">
+                            <strong>{item.spec.quantity ?? "—"}</strong>
+                            <span>{item.spec.quantityUnit || "Unknown"}</span>
+                          </td>
+                          <td className="match-cell">
+                            {item.match ? (
+                              <>
+                                <span className="mono">{item.match.sku}</span>
+                                <small>
+                                  <CheckCircle2 size={11} />
+                                  Exact match
+                                </small>
+                              </>
+                            ) : (
+                              <>
+                                <span className="unmatched">
+                                  Details needed
+                                </span>
+                                <small>Check specifications</small>
+                              </>
+                            )}
+                          </td>
+                          <td className="unit-price-cell">
+                            <strong>{money(item.unitPriceCents)}</strong>
+                            {item.unitPriceCents !== null && (
+                              <small>/ sheet</small>
+                            )}
+                          </td>
+                          <td className="status-column">
+                            <Status
+                              status={
+                                item.reviewConfirmed &&
+                                !item.blockers.length &&
+                                !item.excluded
+                                  ? "Checked"
+                                  : item.status
+                              }
+                              compact
+                            />
+                            <ChevronRight size={14} />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {!rows.length && (
+                  <Empty
+                    title={
+                      pendingOnly ? "Every item is checked" : "No items found"
+                    }
+                    detail={
+                      pendingOnly
+                        ? "You can finish your quote above."
+                        : "Add a request with material descriptions and quantities."
+                    }
+                  />
+                )}
+              </section>
+              <details className="simple-disclosure">
+                <summary>
+                  <FileText size={18} />
+                  <span>Customer’s original request</span>
+                  <ChevronDown size={17} />
+                </summary>
+                <div className="simple-disclosure-body">
+                  <p>{w.rfq.documentName}</p>
+                  <pre>{w.rfq.original}</pre>
+                  {w.rfq.documentId && (
+                    <a
+                      className="text-button"
+                      href={`/api/documents/${w.rfq.documentId}`}
+                    >
+                      Download original document <ArrowRight size={14} />
+                    </a>
+                  )}
+                </div>
+              </details>
+              <details className="simple-disclosure">
+                <summary>
+                  <History size={18} />
+                  <span>Activity & saved quotes</span>
+                  <ChevronDown size={17} />
+                </summary>
+                <div className="simple-disclosure-body">
+                  {w.versions.map((v) => (
+                    <button
+                      key={v.id}
+                      className="button secondary saved-quote-link"
+                      onClick={() => onVersion(v.id)}
+                    >
+                      Open approved quote {v.id}
+                      <ArrowRight size={14} />
+                    </button>
+                  ))}
+                  {w.history.slice(0, 6).map((event) => (
+                    <div className="simple-activity" key={event.id}>
+                      <CheckCircle2 size={16} />
+                      <div>
+                        <strong>{event.action}</strong>
+                        <p>{event.detail}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </details>
             </div>
-          </details>
+            {inspector}
+          </div>
         </>
       ) : (
         <>
