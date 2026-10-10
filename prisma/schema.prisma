@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+datasource db {
+  provider = "sqlite"
+  url = env("DATABASE_URL")
+}
+model Rfq {
+  id        String   @id
+  revision  Int      @default(1)
+  data      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  quotes    QuoteVersion[]
+  events    AuditEvent[]
+  runs      WorkflowRun[]
+}
+model QuoteVersion {
+  id        String   @id
+  rfqId     String
+  rfq       Rfq      @relation(fields: [rfqId], references: [id])
+  revision  Int
+  snapshot  String
+  createdAt DateTime @default(now())
+  approval  Approval?
+  @@unique([rfqId, revision])
+}
+model Approval {
+  id        String   @id
+  quoteId   String   @unique
+  quote     QuoteVersion @relation(fields: [quoteId], references: [id])
+  reviewer  String
+  createdAt DateTime @default(now())
+}
+model AuditEvent {
+  id        String   @id
+  rfqId     String
+  rfq       Rfq      @relation(fields: [rfqId], references: [id])
+  revision  Int
+  action    String
+  detail    String
+  lineId    String?
+  createdAt DateTime @default(now())
+}
+model Document {
+  id         String @id
+  filename   String
+  content    Bytes?
+  storageKey String
+  hash       String
+  data       String
+  createdAt  DateTime @default(now())
+}
+model WorkflowRun {
+  id             String @id
+  rfqId          String
+  rfq            Rfq @relation(fields: [rfqId], references: [id])
+  revision       Int
+  idempotencyKey String @unique
+  operation      String
+  stage          String
+  status         String
+  error          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+model CatalogItem {
+  sku  String @id
+  data String
+}
+model Benchmark {
+  id   String @id
+  data String
+}
+model Setting {
+  id   String @id
+  data String
+}

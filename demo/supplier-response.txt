@@ -1,0 +1,4 @@
+Supplier: Example Metals
+USD 110.00 per sheet. Available: 50. Lead time: 5 days.
+Shipping for this line: USD 60.00.
+Synthetic sample only. Review all extracted fields before saving.

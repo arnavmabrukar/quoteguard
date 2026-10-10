@@ -1,0 +1,17 @@
+{
+  "id": "/",
+  "name": "QuoteGuard",
+  "short_name": "QuoteGuard",
+  "description": "Review RFQs, resolve missing details, and approve evidence-backed quotes.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f7f8fa",
+  "theme_color": "#f7f8fa",
+  "orientation": "any",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

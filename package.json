@@ -1,0 +1,51 @@
+{
+  "name": "quoteguard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack --hostname 127.0.0.1",
+    "build": "node scripts/prisma-generate.mjs && next build --webpack",
+    "start": "next start --hostname 127.0.0.1",
+    "db:setup": "node scripts/setup.mjs",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "db:deploy": "prisma migrate deploy --schema prisma/postgres/schema.prisma"
+  },
+  "dependencies": {
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "@prisma/client": "6.19.0",
+    "zod": "3.25.76",
+    "lucide-react": "0.468.0",
+    "@radix-ui/react-dialog": "1.1.15",
+    "exceljs": "4.4.0",
+    "papaparse": "5.5.3",
+    "pdf-parse": "1.1.1",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "22.19.7",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@types/papaparse": "5.3.16",
+    "@types/pdf-parse": "1.1.5",
+    "prisma": "6.19.0",
+    "vitest": "4.1.11",
+    "@playwright/test": "1.58.2",
+    "tailwindcss": "4.1.18",
+    "@tailwindcss/postcss": "4.1.18",
+    "tsx": "4.21.0"
+  },
+  "overrides": {
+    "effect": "3.20.0",
+    "deepmerge-ts": "8.0.0",
+    "uuid": "11.1.1",
+    "esbuild": "0.28.1"
+  },
+  "engines": {
+    "node": "^22.0.0 || >=24.0.0"
+  }
+}
