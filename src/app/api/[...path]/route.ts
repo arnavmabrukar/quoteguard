@@ -13,6 +13,11 @@ import {
   generateExplanation,
 } from "@/server/services/explanation";
 import { reserveAiRequest } from "@/server/integrations/ai-budget";
+import {
+  evaluationDataset,
+  getEvaluation,
+  saveEvaluation,
+} from "@/server/services/evaluation";
 import { getWorkspace } from "@/server/services/workspace";
 import { mutateRfq } from "@/server/services/mutate-rfq";
 import { importRfq } from "@/server/services/import-rfq";
@@ -38,6 +43,16 @@ async function handler(
     const parts = (await ctx.params).path;
     const route = parts.join("/");
     if (req.method === "GET") {
+      if (route === "evaluation") return json(await getEvaluation());
+      if (route === "evaluation/dataset")
+        return new NextResponse(JSON.stringify(evaluationDataset(), null, 2), {
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Disposition":
+              'attachment; filename="quoteguard-synthetic-rfq-dataset.json"',
+            "Cache-Control": "no-store",
+          },
+        });
       if (
         parts[0] === "rfqs" &&
         parts[2] === "lines" &&
@@ -170,6 +185,12 @@ async function handler(
       if (Number(req.headers.get("content-length") || 0) > 100000)
         throw new AppError(413, "SIZE", "Request is too large.");
       const body = await req.json();
+      if (route === "evaluation") {
+        z.object({ action: z.literal("run") })
+          .strict()
+          .parse(body);
+        return json(await saveEvaluation());
+      }
       if (
         parts[0] === "rfqs" &&
         parts[2] === "lines" &&

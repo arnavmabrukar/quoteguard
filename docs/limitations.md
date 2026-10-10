@@ -14,3 +14,5 @@
 - Uploaded files are limited to 4 MB and stored in PostgreSQL in hosted mode. This is suitable for a small prototype; production document retention and object storage are future work.
 - Quote approvals are immutable snapshots. Instruction checklists retain the latest draft and event history; regeneration replaces the working checklist. Export before regenerating if a separate work-pack copy is needed.
 - Saved changes survive refresh and deployment in PostgreSQL. Unsaved dialog edits remain only in memory. Local SQLite data stays in the development checkout's ignored `.data` folder.
+
+- The software benchmark is a small authored development suite, not an independent held-out assessment. Its initial run identifies incorrect handling of negated MTR requirements, Canadian-origin requests, and named dimensions in a different order. Scores apply only to the fixed synthetic cases; PRISM and live LLM quality are not evaluated.

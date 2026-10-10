@@ -44,13 +44,20 @@ import {
   RfqList,
   SettingsPage,
 } from "./secondary-pages";
+import { EvaluationPage } from "./evaluation-page";
 import { Empty, ErrorMessage, Modal } from "./ui";
 type Action = Mutation extends infer T
   ? T extends Mutation
     ? Omit<T, "expectedRevision" | "idempotencyKey">
     : never
   : never;
-type View = "workspace" | "rfqs" | "catalog" | "benchmarks" | "settings";
+type View =
+  | "workspace"
+  | "rfqs"
+  | "catalog"
+  | "benchmarks"
+  | "settings"
+  | "evaluation";
 type Dialog =
   | "new"
   | "clarify"
@@ -110,7 +117,11 @@ export function QuoteGuardApp() {
   useEffect(() => {
     const hash = window.location.hash.slice(1);
     const parts = hash.split("/");
-    if (["rfqs", "catalog", "benchmarks", "settings"].includes(parts[0]))
+    if (
+      ["rfqs", "catalog", "benchmarks", "settings", "evaluation"].includes(
+        parts[0],
+      )
+    )
       setView(parts[0] as View);
     const target = parts[0] === "rfq" && parts[1] ? parts[1] : "RFQ-1042";
     if (parts[0] === "rfq") setView("workspace");
@@ -291,6 +302,7 @@ export function QuoteGuardApp() {
                       catalog: "Materials",
                       benchmarks: "Reference prices",
                       settings: "Settings",
+                      evaluation: "Software benchmarks",
                     }[view]}
               </span>
             </div>
@@ -407,12 +419,16 @@ export function QuoteGuardApp() {
                     />
                   )}
                   {view === "benchmarks" && <BenchmarksPage w={w} />}
+                  {view === "evaluation" && (
+                    <EvaluationPage onBack={() => navigate("settings")} />
+                  )}
                   {view === "settings" && (
                     <SettingsPage
                       w={w}
                       onPricing={async (markupBps) => {
                         await act({ action: "pricing", markupBps });
                       }}
+                      onEvaluation={() => navigate("evaluation")}
                       onReset={() => setDialog("reset")}
                       busy={busy}
                     />

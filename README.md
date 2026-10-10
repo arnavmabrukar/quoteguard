@@ -78,3 +78,9 @@ See [feature coverage](docs/feature-coverage.md), [integration status](docs/inte
 
 ### Simple quoting interface
 The home screen starts with **New quote** or **Try a sample quote**. Add a customer request by pasting text or uploading a supported file, then check each item and finish the quote. Item review uses Overview, Specifications and Documents; AI help is available with **Explain this item**. The progress count tracks actual item reviews, not just successful material matches. Supplier comparison, cost planning and work instructions remain available under **Suppliers & production tools**.
+
+## Software benchmarks
+
+Open **Settings → Software benchmarks** or `/#evaluation`, then choose **Run benchmark**. The benchmark exercises the demo rule pipeline on 24 authored synthetic RFQ cases and saves the latest report within the browser workspace. It reports every check, including failures, with expected/actual values, dataset hash, code revision and execution time. Download the test data and results from the page.
+
+For a local report without starting the app or configuring providers, run `npm run benchmarks:run`. JSON results, the dataset and a Markdown report are written to `.data/evaluations/<run-id>/`. See [benchmark methodology](docs/benchmarks.md).

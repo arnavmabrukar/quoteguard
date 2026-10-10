@@ -570,11 +570,13 @@ export function SettingsPage({
   w,
   onPricing,
   onReset,
+  onEvaluation,
   busy,
 }: {
   w: Workspace;
   onPricing: (bps: number) => Promise<void>;
   onReset: () => void;
+  onEvaluation: () => void;
   busy: boolean;
 }) {
   const [markup, setMarkup] = useState(String(w.rfq.markupBps / 100)),
@@ -615,6 +617,21 @@ export function SettingsPage({
         </span>
       </div>
       <InstallCard />
+      <section className="panel evaluation-settings-card">
+        <div>
+          <FlaskConical size={21} />
+          <div>
+            <h2>Software benchmarks</h2>
+            <p>
+              Run synthetic RFQs through the quoting rules and inspect measured
+              results.
+            </p>
+          </div>
+        </div>
+        <button className="button secondary" onClick={onEvaluation}>
+          View benchmarks <ArrowRight size={16} />
+        </button>
+      </section>
       <ConnectionOptions w={w} />
       <div className="settings-grid">
         <section className="panel settings-card">

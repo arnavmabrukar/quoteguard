@@ -10,7 +10,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test",
-    "db:deploy": "prisma migrate deploy --schema prisma/postgres/schema.prisma"
+    "db:deploy": "prisma migrate deploy --schema prisma/postgres/schema.prisma",
+    "benchmarks:run": "node --import tsx scripts/run-benchmarks.ts"
   },
   "dependencies": {
     "next": "16.4.0",
