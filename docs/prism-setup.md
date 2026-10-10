@@ -1,6 +1,6 @@
 # PRISM tracing handoff
 
-Verified October 10, 2026 with the host supplied in the user's setup brief. This is TypeScript HTTP instrumentation; no SDK package or PostgreSQL connector is needed. Credentials are in ignored `.env.local` only, with placeholders in `.env.example`. They were not added to Vercel or Git.
+Verified October 10, 2026 with the host supplied in the user's setup brief. This is TypeScript HTTP instrumentation; no SDK package or PostgreSQL connector is needed. Credentials are in ignored `.env.local` and the approved Vercel production configuration, with placeholders in `.env.example`. The API key is a server-side Vercel secret and is never committed to Git.
 
 ## Local operation
 
@@ -12,7 +12,7 @@ Use `X-PRISMtrace-Key` for authenticated verification, never a Bearer token. The
 
 ## Deployment boundary
 
-The supplied brief requires staging first and explicit approval before production writes. Local staging verification is complete, and the user has requested publishing the code to main and Vercel. Hosted PRISM credentials remain unconfigured, so the deployed code does not send PRISM traces. Enabling production tracing separately requires approval to store the server-side credentials and send model-call metadata; prompt/response capture defaults off. Existing AI generation remains button-triggered; tracing does not approve quotes or change prices.
+The supplied brief requires staging first and explicit approval before production writes. Local staging verification is complete. On October 10, 2026 the user explicitly approved storing the existing PRISM key in Vercel production and sending model names, latency, token counts, error codes and hashed session IDs to their PRISM project. Production is configured with `PRISMTRACE_CAPTURE_CONTENT=false`; prompt and response text stay off. Existing AI generation remains button-triggered; tracing does not approve quotes or change prices. The local verification evidence below remains a historical record of the isolated staging run.
 
 ## Maintenance
 
