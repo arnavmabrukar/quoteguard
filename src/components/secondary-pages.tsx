@@ -680,7 +680,7 @@ export function SettingsPage({
             <span className="integration-icon nicrron">N</span>
             <div>
               <h3>Nicrron</h3>
-              <p>Server-side extraction and language interpretation</p>
+              <p>AI match explanations · server-side RFQ extraction</p>
             </div>
             <Status
               status={

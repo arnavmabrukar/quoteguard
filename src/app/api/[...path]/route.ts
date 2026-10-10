@@ -8,6 +8,11 @@ import { withWorkspace } from "@/server/workspace-context";
 import { db } from "@/server/db";
 import { ensureSeed, getCatalog, getBenchmarks } from "@/server/repositories";
 import { getProject, saveProject } from "@/server/services/project";
+import {
+  getExplanation,
+  generateExplanation,
+} from "@/server/services/explanation";
+import { reserveAiRequest } from "@/server/integrations/ai-budget";
 import { getWorkspace } from "@/server/services/workspace";
 import { mutateRfq } from "@/server/services/mutate-rfq";
 import { importRfq } from "@/server/services/import-rfq";
@@ -33,6 +38,13 @@ async function handler(
     const parts = (await ctx.params).path;
     const route = parts.join("/");
     if (req.method === "GET") {
+      if (
+        parts[0] === "rfqs" &&
+        parts[2] === "lines" &&
+        parts[4] === "explanation" &&
+        parts.length === 5
+      )
+        return json(await getExplanation(parts[1], parts[3]));
       if (route === "rfqs") {
         const rows = await db.rfq.findMany({ orderBy: { updatedAt: "desc" } });
         return json(
@@ -69,6 +81,10 @@ async function handler(
         const stored = await db.setting.findUnique({
           where: { id: "integrations" },
         });
+        const aiSuccess = await db.setting.findUnique({
+          where: { id: "nicrron-last-success" },
+        });
+        const verifiedAi = aiSuccess ? JSON.parse(aiSuccess.data) : null;
         return json({
           privateWorkspace: authRequired(),
           publicDemo: publicDemo(),
@@ -80,6 +96,13 @@ async function handler(
             ? "Not verified"
             : "Not configured",
           ...(stored ? JSON.parse(stored.data) : {}),
+          ...(process.env.NICRRON_API_KEY &&
+          verifiedAi?.model === process.env.NICRRON_MODEL
+            ? {
+                nicrron: "Connected (AI explanation)",
+                checkedAt: verifiedAi.checkedAt,
+              }
+            : {}),
           capabilities: prismCapabilities,
         });
       }
@@ -147,6 +170,13 @@ async function handler(
       if (Number(req.headers.get("content-length") || 0) > 100000)
         throw new AppError(413, "SIZE", "Request is too large.");
       const body = await req.json();
+      if (
+        parts[0] === "rfqs" &&
+        parts[2] === "lines" &&
+        parts[4] === "explanation" &&
+        parts.length === 5
+      )
+        return json(await generateExplanation(parts[1], parts[3], body));
       if (parts[0] === "rfqs" && parts[2] === "project" && parts.length === 3)
         return json(await saveProject(parts[1], body));
       if (route === "rfqs")
@@ -287,6 +317,7 @@ async function handler(
           checkedAt: new Date().toISOString(),
         };
         if (process.env.NICRRON_API_KEY) {
+          await reserveAiRequest();
           try {
             const reply = await nicrronCompletion(
               "Reply exactly: QuoteGuard connection verified.",

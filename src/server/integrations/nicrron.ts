@@ -6,7 +6,13 @@ const completionSchema = z.object({
     .array(z.object({ message: z.object({ content: z.string() }) }))
     .min(1),
 });
-export async function nicrronCompletion(system: string, input: string) {
+export const nicrronConfigured = () =>
+  !!process.env.NICRRON_API_KEY && !!process.env.NICRRON_MODEL;
+export async function nicrronCompletion(
+  system: string,
+  input: string,
+  options?: { maxTokens: number },
+) {
   const key = process.env.NICRRON_API_KEY;
   const model = process.env.NICRRON_MODEL;
   if (!key || !model)
@@ -18,10 +24,12 @@ export async function nicrronCompletion(system: string, input: string) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${key}`,
+      "x-nicrron-cache": "false",
     },
     signal: AbortSignal.timeout(30000),
     body: JSON.stringify({
       model,
+      ...(options ? { max_tokens: options.maxTokens, temperature: 0 } : {}),
       messages: [
         { role: "system", content: system },
         { role: "user", content: input },

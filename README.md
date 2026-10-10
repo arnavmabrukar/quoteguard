@@ -35,6 +35,12 @@ The browser suite uses an installed Google Chrome and starts the server in publi
 
 RFQ history, searchable catalog, benchmarks, project-context search, business connection status, and generic ERP handoff export are included. Phone screens use cards, full-screen review panels, touch-sized controls, and bottom navigation. The web manifest and icons support Add to Home Screen. The service worker provides a connection-loss page; sensitive records are not cached for offline editing.
 
+## Nicrron explanations
+
+Set `NICRRON_API_KEY` and `NICRRON_MODEL=openai/gpt-4.1-mini` in an ignored `.env.local` file or the deployment’s server environment. Keep `QUOTEGUARD_MODE=demo` to use sample data with real AI explanations. Open a line → **Match** → **Explain with AI**. The card explains the match, price, evidence limitations, and nearby alternatives from the server’s checked facts. The key and raw documents never go to the browser or into the explanation prompt.
+
+Generated text is cached per workspace and invalidated by changed facts or revisions. It does not approve lines or modify calculations. Failure states leave manual review available. Requests are limited to 20 per workspace and 100 globally per UTC day by default; configure `NICRRON_DAILY_REQUEST_LIMIT` to change the global ceiling. A live synthetic explanation was verified on October 10, 2026. See [integration status](docs/integration-status.md) for verification limits.
+
 ## Hosted deployment
 
 The Vercel build selects `prisma/postgres/schema.prisma` when `DATABASE_URL` is PostgreSQL. Local setup uses `prisma/schema.prisma` (SQLite). Keep both model definitions aligned. Database migrations are explicit:

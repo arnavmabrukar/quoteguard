@@ -24,6 +24,7 @@ import type { LineView, Workspace, Evidence } from "@/domain/types";
 import { dimensionLabel, specDescription } from "@/domain/match-catalog";
 import { money } from "@/lib/format";
 import { Status } from "./ui";
+import { LineExplanation } from "./line-explanation";
 export type InspectorTab =
   | "Source"
   | "Match"
@@ -186,6 +187,7 @@ export function LineInspector({
         )}
         {tab === "Match" && (
           <>
+            <LineExplanation w={w} line={line} />
             <div className="section-caption">
               <Layers3 size={15} />
               <h3>
