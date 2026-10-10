@@ -24,7 +24,7 @@ npm run build
 npm start
 ```
 
-The browser suite uses an installed Google Chrome. It resets the demonstration RFQ and creates test requests; run it against a disposable local database. Screenshots go to ignored `test-results/`.
+The browser suite uses an installed Google Chrome and starts the server in public-demo mode. If reusing an already running server, configure `PUBLIC_DEMO=true` and a `SESSION_SECRET` first. It resets sample RFQs and creates test requests; use a disposable local database. Screenshots go to ignored `test-results/`.
 
 ## Four connected workflows
 
@@ -46,17 +46,18 @@ npm run build
 
 Set these server-only environment variables:
 
-| Variable | Purpose |
-| --- | --- |
-| `DATABASE_URL` | Private PostgreSQL connection with TLS |
-| `AUTH_REQUIRED=true` | Require a workspace session |
-| `WORKSPACE_PASSWORD_HASH` | `salt:hex` scrypt hash, 64-byte output |
-| `SESSION_SECRET` | At least 32 random characters for signed sessions |
-| `QUOTEGUARD_MODE=demo` | Explicit sample-data mode |
+| Variable               | Purpose                                                    |
+| ---------------------- | ---------------------------------------------------------- |
+| `DATABASE_URL`         | Private PostgreSQL connection with TLS                     |
+| `PUBLIC_DEMO=true`     | Open directly into an isolated browser workspace; no login |
+| `SESSION_SECRET`       | At least 32 random characters for signed sessions          |
+| `QUOTEGUARD_MODE=demo` | Explicit sample-data mode                                  |
 
-Generate credentials locally with `node scripts/create-access.mjs`. Store the output privately; do not commit secrets. Hosted deployments fail closed if authentication is absent. Sessions use HttpOnly, Secure, SameSite cookies and expire after 14 days. Sign-in attempts are limited per client. This is one private workspace, not a multi-tenant organization product.
+The deployed prototype opens directly into the app. Each browser gets a signed, HttpOnly, Secure, SameSite cookie and its own database namespace. The cookie lasts 30 days; clearing it or switching browsers starts a fresh sample workspace. Saved work persists across refreshes and deployments in the same browser. There are no user accounts, cross-device sync, or recovery links. Keep this prototype to sample data.
 
-Uploaded source documents are persisted in the database (4 MB maximum) and require the same authenticated session as the RFQ API. The original file bytes remain available for download.
+Generate a signing secret with `node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))'`. Store it privately; never commit it. Public-demo APIs fail closed if the secret is absent. All RFQs, documents, quotes, catalog entries, and project state are scoped server-side to the signed browser workspace. Uploaded source documents are stored as database bytes (4 MB maximum) and remain downloadable only within that workspace.
+
+Optional private deployments can set `PUBLIC_DEMO=false`, `AUTH_REQUIRED=true`, and `WORKSPACE_PASSWORD_HASH` (a `salt:hex` scrypt hash). `node scripts/create-access.mjs` generates private-mode credentials. This optional mode retains the passcode screen and one owner workspace; it is disabled on the public prototype.
 
 ## Demo walkthrough
 

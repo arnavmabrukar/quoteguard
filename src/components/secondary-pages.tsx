@@ -534,6 +534,7 @@ export function SettingsPage({
       traceId?: string;
       checkedAt?: string;
       privateWorkspace?: boolean;
+      publicDemo?: boolean;
     } | null>(null),
     [connecting, setConnecting] = useState(false),
     [error, setError] = useState(""),
@@ -549,11 +550,17 @@ export function SettingsPage({
         <div>
           <div className="eyebrow">WORKSPACE PREFERENCES</div>
           <h1>Settings</h1>
-          <p>Transparent pricing policies and truthful integration states.</p>
+          <p>
+            {info?.publicDemo
+              ? "Saved for this browser for 30 days. Clearing cookies starts a fresh demo; other devices have separate workspaces."
+              : "Transparent pricing policies and truthful integration states."}
+          </p>
         </div>
         <span className="demo-pill">
           <ShieldCheck size={14} />
-          Private · single workspace
+          {info?.publicDemo
+            ? "Your browser · demo workspace"
+            : "Single workspace"}
         </span>
       </div>
       <InstallCard />

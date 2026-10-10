@@ -1118,7 +1118,7 @@ export function QuoteGuardApp() {
             {!w && !loading && (
               <Empty
                 title="Workspace could not be loaded"
-                detail="Refresh saved state or sign in again to reconnect."
+                detail="Refresh to reconnect and load your saved workspace."
               />
             )}
           </main>

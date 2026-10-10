@@ -3,7 +3,8 @@ import { z } from "zod";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { checkAccess, AppError } from "@/server/access";
-import { authRequired } from "@/server/session";
+import { authRequired, publicDemo } from "@/server/session";
+import { withWorkspace } from "@/server/workspace-context";
 import { db } from "@/server/db";
 import { ensureSeed, getCatalog, getBenchmarks } from "@/server/repositories";
 import { getProject, saveProject } from "@/server/services/project";
@@ -70,6 +71,7 @@ async function handler(
         });
         return json({
           privateWorkspace: authRequired(),
+          publicDemo: publicDemo(),
           mode: process.env.QUOTEGUARD_MODE === "live" ? "live" : "demo",
           nicrron: process.env.NICRRON_API_KEY
             ? "Not verified"
@@ -343,5 +345,6 @@ async function handler(
     );
   }
 }
-export const GET = handler;
-export const POST = handler;
+export const GET = (req: NextRequest, ctx: Parameters<typeof handler>[1]) =>
+  withWorkspace(req, () => handler(req, ctx));
+export const POST = GET;

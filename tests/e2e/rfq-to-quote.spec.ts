@@ -1,5 +1,8 @@
-import { test, expect } from "@playwright/test";
+import { test as base, expect } from "@playwright/test";
 import { sampleText, edgeFixtures } from "../../src/domain/fixtures";
+const test = base.extend({
+  request: async ({ context }, use) => use(context.request),
+});
 test.beforeEach(async ({ request }) => {
   await request.post("/api/demo/reset", { data: { confirm: true } });
 });

@@ -14,6 +14,10 @@ export default defineConfig({
   reporter: "list",
   webServer: {
     command: "npm run dev -- --port 3000",
+    env: {
+      PUBLIC_DEMO: "true",
+      SESSION_SECRET: "test-only-demo-session-secret-not-for-production",
+    },
     url: "http://127.0.0.1:3000",
     reuseExistingServer: true,
     timeout: 60000,

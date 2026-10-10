@@ -4,7 +4,9 @@ import {
   authConfigured,
   validSession,
   requestSession,
+  publicDemo,
 } from "./session";
+import { demoConfigured, workspaceScope } from "./workspace-context";
 export class AppError extends Error {
   constructor(
     public status: number,
@@ -36,6 +38,11 @@ export function checkOrigin(request: Request) {
 }
 export function checkAccess(request: Request) {
   checkOrigin(request);
+  if (publicDemo()) {
+    if (!demoConfigured() || !workspaceScope())
+      throw new AppError(503, "SETUP", "Demo workspace is not configured.");
+    return;
+  }
   if (authRequired()) {
     if (!authConfigured())
       throw new AppError(

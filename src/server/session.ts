@@ -6,7 +6,9 @@ import {
   randomBytes,
 } from "node:crypto";
 export const SESSION_COOKIE = "quoteguard_session";
+export const publicDemo = () => process.env.PUBLIC_DEMO === "true";
 export function authRequired() {
+  if (publicDemo()) return false;
   return (
     !!process.env.VERCEL ||
     process.env.AUTH_REQUIRED === "true" ||
@@ -34,6 +36,7 @@ export function verifyPassword(password: string) {
 export function createSession() {
   const payload = Buffer.from(
     JSON.stringify({
+      purpose: "owner",
       expires: Date.now() + 14 * 86400000,
       nonce: randomBytes(16).toString("hex"),
     }),
@@ -59,6 +62,7 @@ export function validSession(token: string | undefined) {
       return false;
     const data = JSON.parse(Buffer.from(payload, "base64url").toString());
     return (
+      data.purpose === "owner" &&
       Number.isSafeInteger(data.expires) &&
       data.expires > Date.now() &&
       data.expires <= Date.now() + 14 * 86400000
