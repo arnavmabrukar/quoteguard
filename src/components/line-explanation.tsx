@@ -8,58 +8,49 @@ import { useEffect, useRef, useState } from "react";
 
 export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
   const [view, setView] = useState<ExplanationView | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
-  const [reload, setReload] = useState(0);
   const request = useRef(0);
   const url = `rfqs/${encodeURIComponent(w.rfq.id)}/lines/${encodeURIComponent(line.id)}/explanation`;
   const basis = JSON.stringify(explanationFacts(w, line));
   useEffect(() => {
-    const ticket = ++request.current;
+    request.current++;
     setView(null);
     setError("");
-    setLoading(true);
+    setLoading(false);
     setGenerating(false);
-    api<ExplanationView>(url)
-      .then((result) => {
-        if (request.current === ticket) setView(result);
-      })
-      .catch((e) => {
-        if (request.current === ticket) setError(e.message);
-      })
-      .finally(() => {
-        if (request.current === ticket) setLoading(false);
-      });
     return () => {
       request.current++;
     };
-  }, [url, w.rfq.revision, basis, reload]);
+  }, [url, w.rfq.revision, basis]);
 
   async function generate() {
-    if (!view) return;
-    const ticket = request.current;
-    setGenerating(true);
+    if (loading || generating) return;
+    const ticket = ++request.current;
+    setLoading(true);
     setError("");
     try {
+      // Saved explanations are also opened only after an explicit click.
+      const current = await api<ExplanationView>(url);
+      if (request.current !== ticket) return;
+      setView(current);
+      if (current.saved || !current.configured || !current.allowed) return;
+      setLoading(false);
+      setGenerating(true);
       const result = await api<ExplanationView>(url, {
         expectedRevision: w.rfq.revision,
-        fingerprint: view.fingerprint,
+        fingerprint: current.fingerprint,
       });
       if (request.current === ticket) setView(result);
     } catch (e) {
-      if (request.current === ticket) {
-        setError((e as Error).message);
-        // Refresh the source fingerprint so retry never sends stale facts.
-        try {
-          const latest = await api<ExplanationView>(url);
-          if (request.current === ticket) setView(latest);
-        } catch {
-          /* Keep the original useful error. */
-        }
-      }
+      if (request.current === ticket) setError((e as Error).message);
+      // Each retry reads the current facts before requesting generation.
     } finally {
-      if (request.current === ticket) setGenerating(false);
+      if (request.current === ticket) {
+        setLoading(false);
+        setGenerating(false);
+      }
     }
   }
   const saved = view?.saved;
@@ -137,7 +128,9 @@ export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
             className="button explanation-generate full"
             onClick={generate}
             disabled={
-              loading || generating || !view?.configured || !view?.allowed
+              loading ||
+              generating ||
+              (view !== null && (!view.configured || !view.allowed))
             }
           >
             {loading || generating ? (
@@ -148,7 +141,7 @@ export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
             {generating
               ? "Writing explanation…"
               : loading
-                ? "Checking saved explanation…"
+                ? "Loading explanation…"
                 : "Explain this item"}
           </button>
           <p className="explanation-note" role="status">
@@ -166,14 +159,6 @@ export function LineExplanation({ w, line }: { w: Workspace; line: LineView }) {
         <p className="explanation-error" role="alert">
           {error}
         </p>
-      )}
-      {!view && !loading && (
-        <button
-          className="button secondary full"
-          onClick={() => setReload((value) => value + 1)}
-        >
-          Retry loading explanation
-        </button>
       )}
       <details className="explanation-details explanation-sources">
         <summary>
