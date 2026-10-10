@@ -22,6 +22,7 @@ import {
   Loader2,
   Plus,
   RefreshCw,
+  ScanSearch,
   Settings,
   ShieldCheck,
   TriangleAlert,
@@ -45,6 +46,7 @@ import {
   SettingsPage,
 } from "./secondary-pages";
 import { EvaluationPage } from "./evaluation-page";
+import { SpecHudPage } from "./spec-hud";
 import { Empty, ErrorMessage, Modal } from "./ui";
 type Action = Mutation extends infer T
   ? T extends Mutation
@@ -56,6 +58,7 @@ type View =
   | "rfqs"
   | "catalog"
   | "benchmarks"
+  | "spechud"
   | "settings"
   | "evaluation";
 type Dialog =
@@ -118,7 +121,7 @@ export function QuoteGuardApp() {
     const hash = window.location.hash.slice(1);
     const parts = hash.split("/");
     if (
-      ["rfqs", "catalog", "benchmarks", "settings", "evaluation"].includes(
+      ["rfqs", "catalog", "benchmarks", "spechud", "settings", "evaluation"].includes(
         parts[0],
       )
     )
@@ -251,6 +254,7 @@ export function QuoteGuardApp() {
                   label: "Prices",
                   icon: CircleDollarSign,
                 },
+                { key: "spechud", label: "Spec HUD", icon: ScanSearch },
               ] as const
             ).map(({ key, label, icon: Icon }) => (
               <button
@@ -301,6 +305,7 @@ export function QuoteGuardApp() {
                       rfqs: "Your quotes",
                       catalog: "Materials",
                       benchmarks: "Reference prices",
+                      spechud: "Spec HUD",
                       settings: "Settings",
                       evaluation: "Software benchmarks",
                     }[view]}
@@ -419,6 +424,22 @@ export function QuoteGuardApp() {
                     />
                   )}
                   {view === "benchmarks" && <BenchmarksPage w={w} />}
+                  {view === "spechud" && (
+                    <SpecHudPage
+                      w={w}
+                      onClarify={(lineId) => {
+                        setSelected(lineId);
+                        setDialog("clarify");
+                      }}
+                      onOpenLine={(lineId, target) => {
+                        setSelected(lineId);
+                        setTab(target);
+                        setStage("Quote");
+                        navigate("workspace");
+                        setDrawer(true);
+                      }}
+                    />
+                  )}
                   {view === "evaluation" && (
                     <EvaluationPage onBack={() => navigate("settings")} />
                   )}
@@ -451,6 +472,7 @@ export function QuoteGuardApp() {
             { key: "rfqs", label: "Quotes", icon: ClipboardList },
             { key: "catalog", label: "Materials", icon: Layers3 },
             { key: "benchmarks", label: "Prices", icon: CircleDollarSign },
+            { key: "spechud", label: "Spec HUD", icon: ScanSearch },
             { key: "settings", label: "Settings", icon: Settings },
           ] as const
         ).map(({ key, label, icon: Icon }) => (

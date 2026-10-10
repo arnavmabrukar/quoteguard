@@ -16,3 +16,7 @@
 - Saved changes survive refresh and deployment in PostgreSQL. Unsaved dialog edits remain only in memory. Local SQLite data stays in the development checkout's ignored `.data` folder.
 
 - The software benchmark is a small authored development suite, not an independent held-out assessment. Its initial run identifies incorrect handling of negated MTR requirements, Canadian-origin requests, and named dimensions in a different order. Scores apply only to the fixed synthetic cases; PRISM and live LLM quality are not evaluated.
+
+## CAD export (stock blank)
+
+`GET /api/rfqs/:id/cad?line=<n>&format=dxf|step` returns a rectangular stock blank (length x width x thickness) for a line on the **approved** quote, using the quoted SKU's catalog dimensions. It has no holes, bends, cutouts, or tolerances because the data model has none. Files are labeled synthetic in demo mode and are not for fabrication. The STEP output is generated text and has not been validated in a CAD kernel.
