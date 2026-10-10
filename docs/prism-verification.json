@@ -1,0 +1,59 @@
+{
+  "credentialHandshakeHttpStatus": 200,
+  "application": {
+    "handler": "POST /api/rfqs/RFQ-1042/lines/line-1/explanation",
+    "status": 200,
+    "model": "openai/gpt-4.1-mini",
+    "generatedAt": "2026-10-10T19:33:46.383Z",
+    "hasSavedExplanation": true,
+    "data": "Fresh built-in synthetic RFQ and catalog",
+    "error": null
+  },
+  "doctor": {
+    "checked_at": "2026-10-10T19:34:10.852447",
+    "credential_ok": true,
+    "live_connected": true,
+    "overall": "connected",
+    "blocked_step": null,
+    "live_trace_count": 1,
+    "app_trace_count": 1,
+    "demo_trace_count": 1
+  },
+  "pipelineEvidence": [
+    {
+      "id": "event_received",
+      "title": "Live event received",
+      "status": "done",
+      "detail": "1 live trace received from your application.",
+      "evidence": {
+        "live_trace_count": 1,
+        "app_trace_count": 1,
+        "verification_trace_count": 0,
+        "demo_trace_count": 1,
+        "latest_trace_at": "2026-10-10T19:33:45.767567"
+      },
+      "next_action": null
+    },
+    {
+      "id": "trace_normalized",
+      "title": "Trace normalized",
+      "status": "done",
+      "detail": "1 trajectory assembled.",
+      "evidence": {
+        "trajectory_count": 1
+      },
+      "next_action": null
+    },
+    {
+      "id": "analysis_ready",
+      "title": "Analysis ready",
+      "status": "done",
+      "detail": "1 live trace analysed.",
+      "evidence": {
+        "evaluated_count": 1
+      },
+      "next_action": null
+    }
+  ],
+  "scope": "Isolated local application using built-in synthetic data. No production deployment or credentials changed. No evaluator verdict is claimed."
+}

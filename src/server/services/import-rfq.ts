@@ -8,7 +8,7 @@ import { reviewLines } from "@/domain/review";
 import { db } from "../db";
 import { getCatalog, getBenchmarks } from "../repositories";
 import { extractLive } from "../integrations/nicrron";
-import { emitTrace } from "../integrations/prism";
+import type { TraceResult } from "../integrations/prism";
 import { AppError } from "../access";
 export async function importRfq(input: z.infer<typeof createSchema>) {
   const [catalog, benchmarks] = await Promise.all([
@@ -83,10 +83,18 @@ export async function importRfq(input: z.infer<typeof createSchema>) {
   });
   try {
     let lines;
+    let extractionTrace: TraceResult | undefined;
     if (!rfq.guardrail.passed) lines = extractDemo(text);
     else if (rfq.mode === "demo") lines = extractDemo(text);
     else {
-      const extracted = await extractLive(text);
+      const extracted = await extractLive(text, {
+        sessionId: id,
+        revision: 1,
+        operation: "rfq-extraction",
+        onResult: (result) => {
+          extractionTrace = result;
+        },
+      });
       lines = extracted.map((l, i) => ({
         ...l,
         id: `line-${i + 1}`,
@@ -113,15 +121,8 @@ export async function importRfq(input: z.infer<typeof createSchema>) {
         reviewed.find((v) => v.id === l.id)?.match?.evidence || [],
       );
     }
-    if (rfq.mode === "live" && rfq.guardrail.passed) {
-      const trace = await emitTrace(
-        "Synthetic local-prototype RFQ extraction",
-        JSON.stringify({ lineCount: lines.length, mode: "live" }),
-        id,
-        1,
-      );
-      completed.prism = { ...completed.prism, ...trace };
-    }
+    if (extractionTrace)
+      completed.prism = { ...completed.prism, ...extractionTrace };
     await db.$transaction(async (tx) => {
       await tx.rfq.update({
         where: { id },

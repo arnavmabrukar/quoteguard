@@ -105,6 +105,12 @@ export async function generateExplanation(
   try {
     output = await nicrronCompletion(system, JSON.stringify(initial.context), {
       maxTokens: 1400,
+      trace: {
+        sessionId: rfqId,
+        revision: expectedRevision,
+        operation: "line-explanation",
+        sampleData: initial.w.rfq.mode === "demo",
+      },
     });
   } catch {
     throw new AppError(

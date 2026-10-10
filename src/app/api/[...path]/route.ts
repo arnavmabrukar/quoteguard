@@ -26,7 +26,10 @@ import { parseUpload } from "@/server/documents/parse-upload";
 import { createSchema, mutationSchema } from "@/contracts/rfq";
 import { seedRfq } from "@/domain/fixtures";
 import { nicrronCompletion } from "@/server/integrations/nicrron";
-import { emitTrace, prismCapabilities } from "@/server/integrations/prism";
+import {
+  prismCapabilities,
+  type TraceResult,
+} from "@/server/integrations/prism";
 import type { CatalogItem, Rfq } from "@/domain/types";
 import { parseSpec } from "@/domain/extract-demo";
 export const runtime = "nodejs";
@@ -340,22 +343,28 @@ async function handler(
         if (process.env.NICRRON_API_KEY) {
           await reserveAiRequest();
           try {
-            const reply = await nicrronCompletion(
+            let trace: TraceResult | undefined;
+            await nicrronCompletion(
               "Reply exactly: QuoteGuard connection verified.",
               "Synthetic connection check; no customer data.",
+              {
+                trace: {
+                  sessionId: "quoteguard-connection-test",
+                  operation: "connection-check",
+                  synthetic: true,
+                  sampleData: true,
+                  onResult: (result) => {
+                    trace = result;
+                  },
+                },
+              },
             );
             result.nicrron = "Connected";
-            const trace = await emitTrace(
-              "Synthetic connection check; no customer data.",
-              reply,
-              "quoteguard-connection-test",
-              1,
-            );
             result.prism =
-              trace.telemetry === "Accepted"
+              trace?.telemetry === "Accepted"
                 ? "Connected (test trace)"
-                : trace.telemetry;
-            result.traceId = trace.traceId;
+                : trace?.telemetry || "Not configured";
+            result.traceId = trace?.traceId || null;
           } catch (e) {
             result.nicrron =
               e instanceof Error ? e.message : "Connection error";
