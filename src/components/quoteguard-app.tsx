@@ -32,6 +32,7 @@ import {
   History,
   Info,
   Layers3,
+  ScanSearch,
   LifeBuoy,
   Loader2,
   Mail,
@@ -60,6 +61,7 @@ import { api } from "@/lib/api";
 import { money, shortDate } from "@/lib/format";
 import { specDescription } from "@/domain/match-catalog";
 import { LineInspector, type InspectorTab } from "./line-inspector";
+import { SpecHudPage } from "./spec-hud";
 import {
   EvidenceDialog,
   ImportDialog,
@@ -78,7 +80,13 @@ type Action = Mutation extends infer T
     ? Omit<T, "expectedRevision" | "idempotencyKey">
     : never
   : never;
-type View = "workspace" | "rfqs" | "catalog" | "benchmarks" | "settings";
+type View =
+  | "workspace"
+  | "rfqs"
+  | "catalog"
+  | "benchmarks"
+  | "spechud"
+  | "settings";
 type Dialog =
   | "new"
   | "clarify"
@@ -142,7 +150,9 @@ export function QuoteGuardApp() {
   useEffect(() => {
     const hash = window.location.hash.slice(1);
     const parts = hash.split("/");
-    if (["rfqs", "catalog", "benchmarks", "settings"].includes(parts[0]))
+    if (["rfqs", "catalog", "benchmarks", "spechud", "settings"].includes(
+        parts[0],
+      ))
       setView(parts[0] as View);
     const target = parts[0] === "rfq" && parts[1] ? parts[1] : "RFQ-1042";
     void load(target);
@@ -300,6 +310,7 @@ export function QuoteGuardApp() {
                   label: "Benchmarks",
                   icon: CircleDollarSign,
                 },
+                { key: "spechud", label: "Spec HUD", icon: ScanSearch },
               ] as const
             ).map(({ key, label, icon: Icon }) => (
               <button
@@ -366,7 +377,9 @@ export function QuoteGuardApp() {
               >
                 {view === "workspace"
                   ? "RFQs"
-                  : view[0].toUpperCase() + view.slice(1)}
+                  : view === "spechud"
+                    ? "Spec HUD"
+                    : view[0].toUpperCase() + view.slice(1)}
               </button>
               {view === "workspace" && (
                 <>
@@ -1102,6 +1115,22 @@ export function QuoteGuardApp() {
                     />
                   )}
                   {view === "benchmarks" && <BenchmarksPage w={w} />}
+                  {view === "spechud" && (
+                    <SpecHudPage
+                      w={w}
+                      onClarify={(lineId) => {
+                        setSelected(lineId);
+                        setDialog("clarify");
+                      }}
+                      onOpenLine={(lineId, target) => {
+                        setSelected(lineId);
+                        setTab(target);
+                        setStage("Quote");
+                        navigate("workspace");
+                        setDrawer(true);
+                      }}
+                    />
+                  )}
                   {view === "settings" && (
                     <SettingsPage
                       w={w}

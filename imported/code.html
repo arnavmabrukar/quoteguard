@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+
+<html class="h-full" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SpecLens - Blueprint Inspector &amp; Spec HUD</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary": "#793f00",
+            "on-secondary": "#ffffff",
+            "surface-container-high": "#e2e7ff",
+            "inverse-primary": "#b7c4ff",
+            "inverse-surface": "#283044",
+            "on-tertiary-container": "#ffdfc8",
+            "primary": "#003ec7",
+            "secondary-fixed": "#85f8c4",
+            "secondary": "#006c4a",
+            "tertiary-fixed": "#ffdcc3",
+            "on-primary-fixed": "#001452",
+            "tertiary-container": "#9c5300",
+            "primary-fixed-dim": "#b7c4ff",
+            "inverse-on-surface": "#eef0ff",
+            "tertiary-fixed-dim": "#ffb77d",
+            "on-surface-variant": "#434656",
+            "surface-variant": "#dae2fd",
+            "on-tertiary-fixed": "#2f1500",
+            "on-primary-container": "#dfe3ff",
+            "primary-fixed": "#dde1ff",
+            "surface-container-low": "#f2f3ff",
+            "surface": "#faf8ff",
+            "on-secondary-fixed-variant": "#005137",
+            "on-error-container": "#93000a",
+            "primary-container": "#0052ff",
+            "surface-container-highest": "#dae2fd",
+            "on-secondary-fixed": "#002114",
+            "surface-tint": "#004ced",
+            "on-error": "#ffffff",
+            "surface-dim": "#d2d9f4",
+            "surface-container": "#eaedff",
+            "on-background": "#131b2e",
+            "background": "#faf8ff",
+            "outline": "#737688",
+            "on-secondary-container": "#00714e",
+            "secondary-container": "#82f5c1",
+            "on-tertiary": "#ffffff",
+            "on-primary": "#ffffff",
+            "secondary-fixed-dim": "#68dba9",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-fixed-variant": "#6e3900",
+            "on-surface": "#131b2e",
+            "error": "#ba1a1a",
+            "surface-bright": "#faf8ff",
+            "on-primary-fixed-variant": "#0038b6",
+            "error-container": "#ffdad6",
+            "outline-variant": "#c3c5d9"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.125rem",
+            "lg": "0.25rem",
+            "xl": "0.5rem",
+            "full": "0.75rem"
+          },
+          "spacing": {
+            "space-xl": "1.5rem",
+            "space-lg": "1rem",
+            "gutter": "0.75rem",
+            "margin-desktop": "1.5rem",
+            "space-xs": "0.25rem",
+            "gutter-desktop": "1rem",
+            "space-md": "0.75rem",
+            "space-2xl": "2rem",
+            "margin": "1rem",
+            "space-sm": "0.5rem"
+          },
+          "fontFamily": {
+            "headline-xl": ["Geist"],
+            "headline-sm": ["Geist"],
+            "body-md": ["Geist"],
+            "body-lg": ["Geist"],
+            "headline-lg": ["Geist"],
+            "headline-md": ["Geist"],
+            "body-sm": ["Geist"],
+            "label-code-lg": ["JetBrains Mono"],
+            "label-code-md": ["JetBrains Mono"],
+            "label-code-sm": ["JetBrains Mono"]
+          },
+          "fontSize": {
+            "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.025em", "fontWeight": "600" }],
+            "headline-sm": ["15px", { "lineHeight": "20px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+            "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "headline-md": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.015em", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+            "label-code-lg": ["13px", { "lineHeight": "18px", "letterSpacing": "-0.01em", "fontWeight": "500" }],
+            "label-code-md": ["11px", { "lineHeight": "16px", "letterSpacing": "0em", "fontWeight": "500" }],
+            "label-code-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "600" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 18px;
+      line-height: 1;
+      display: inline-block;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    .technical-grid {
+      background-size: 24px 24px;
+      background-image: 
+        linear-gradient(to right, rgba(0, 82, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 82, 255, 0.05) 1px, transparent 1px);
+    }
+    .technical-subgrid {
+      background-size: 120px 120px;
+      background-image: 
+        linear-gradient(to right, rgba(0, 82, 255, 0.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(0, 82, 255, 0.12) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface h-full flex flex-col font-body-md text-body-md overflow-hidden selection:bg-surface-variant">
+<!-- TOP APP BAR -->
+<header class="flex justify-between items-center w-full px-4 h-12 sticky top-0 z-40 bg-surface-container-lowest border-b border-outline-variant select-none">
+<div class="flex items-center gap-space-md">
+<div class="flex items-center gap-space-xs">
+<span class="w-6 h-6 bg-primary-container text-on-primary flex items-center justify-center rounded font-label-code-sm text-label-code-sm font-bold">SL</span>
+<span class="text-headline-md font-headline-md text-primary tracking-tight font-semibold">SpecLens</span>
+</div>
+<span class="h-4 w-px bg-outline-variant"></span>
+<!-- Breadcrumbs -->
+<nav class="flex items-center gap-space-xs font-label-code-md text-label-code-md text-on-surface-variant">
+<span class="hover:text-primary transition-colors cursor-pointer">Pipeline</span>
+<span class="text-outline">/</span>
+<span class="hover:text-primary transition-colors cursor-pointer">RFQ-8492</span>
+<span class="text-outline">/</span>
+<span class="text-on-surface font-semibold flex items-center gap-1">
+          Raytheon Aero Bracket (Rev D)
+          <span class="px-1.5 py-0.5 rounded bg-surface-container text-primary font-label-code-sm text-label-code-sm">CAGE: 06849</span>
+</span>
+</nav>
+</div>
+<!-- Center Zero-Assumptions Policy Pill -->
+<div class="flex items-center gap-space-xs px-2.5 py-1 rounded bg-surface-container-low border border-primary/20">
+<span class="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-semibold">Zero-Assumptions Policy: ACTIVE</span>
+<span class="text-outline-variant">|</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Deterministic Mode</span>
+</div>
+<!-- Trailing Actions Cluster -->
+<div class="flex items-center gap-space-sm">
+<button class="flex items-center gap-1 px-2.5 py-1 rounded text-on-surface border border-outline-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.99] font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">share</span>
+<span>Share Spec</span>
+</button>
+<button class="flex items-center gap-1 px-2.5 py-1 rounded text-on-surface border border-outline-variant hover:bg-surface-container-low transition-colors duration-150 active:scale-[0.99] font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[16px]">history</span>
+<span>Audit Log</span>
+</button>
+<button class="flex items-center gap-1 px-3 py-1 rounded bg-primary-container text-on-primary hover:bg-primary transition-colors duration-150 active:scale-[0.99] font-body-sm text-body-sm font-medium">
+<span class="material-symbols-outlined text-[16px]">file_download</span>
+<span>Export Quote</span>
+</button>
+<span class="h-4 w-px bg-outline-variant mx-1"></span>
+<div class="flex items-center gap-1">
+<button class="p-1 rounded text-on-surface-variant hover:bg-surface-container-low transition-colors" title="Notifications">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-1 rounded text-on-surface-variant hover:bg-surface-container-low transition-colors" title="Support">
+<span class="material-symbols-outlined">help_outline</span>
+</button>
+</div>
+<div class="flex items-center gap-2 pl-1">
+<div class="w-7 h-7 rounded bg-surface-container-high border border-outline-variant flex items-center justify-center font-label-code-sm text-label-code-sm font-semibold text-primary" title="Lead Estimator Avatar">
+          LE
+        </div>
+</div>
+</div>
+</header>
+<!-- BODY CONTENT (SIDE NAV + SPLIT WORKSPACE) -->
+<div class="flex flex-1 h-[calc(100vh-3rem)] overflow-hidden">
+<!-- VERTICAL SIDE NAVIGATION -->
+<aside class="flex flex-col h-full w-60 p-space-sm bg-surface-container-lowest border-r border-outline-variant justify-between flex-shrink-0 z-30 select-none">
+<div class="flex flex-col gap-space-md">
+<!-- Shop ID Header -->
+<div class="flex items-center justify-between px-space-sm py-1 border-b border-outline-variant/60 pb-2">
+<div>
+<div class="font-headline-sm text-headline-sm text-on-surface font-semibold tracking-tight">SpecLens Core</div>
+<div class="font-label-code-sm text-label-code-sm text-on-surface-variant">Shop #402 • Calibrated</div>
+</div>
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-fixed-dim border border-secondary" title="Precision Engine Online"></span>
+</div>
+<!-- Primary Action CTA -->
+<button class="w-full flex items-center justify-center gap-space-xs py-1.5 px-3 bg-surface-container-high hover:bg-surface-variant text-primary border border-primary/20 rounded font-body-sm text-body-sm font-semibold transition-colors duration-150">
+<span class="material-symbols-outlined text-[16px]">add_circle</span>
+<span>Quick Quote +</span>
+</button>
+<!-- Navigation Links -->
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-space-sm px-space-md py-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">view_kanban</span>
+<span class="font-body-sm text-body-sm">Pipeline</span>
+</a>
+<a class="flex items-center gap-space-sm px-space-md py-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">document_scanner</span>
+<span class="font-body-sm text-body-sm">RFQ Parsing</span>
+</a>
+<!-- Active Tab: Spec HUD -->
+<a class="flex items-center gap-space-sm px-space-md py-space-xs text-primary bg-surface-container font-medium rounded-lg border-l-2 border-primary transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">biotech</span>
+<span class="font-body-sm text-body-sm font-semibold">Spec HUD</span>
+<span class="ml-auto px-1.5 py-0.2 rounded bg-tertiary-container/10 text-tertiary font-label-code-sm text-label-code-sm font-bold">2 Alert</span>
+</a>
+<a class="flex items-center gap-space-sm px-space-md py-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">calculate</span>
+<span class="font-body-sm text-body-sm">Quote Matrix</span>
+</a>
+<a class="flex items-center gap-space-sm px-space-md py-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">precision_manufacturing</span>
+<span class="font-body-sm text-body-sm">Shop Settings</span>
+</a>
+</nav>
+</div>
+<!-- Footer Nav Cluster -->
+<div class="flex flex-col gap-1 border-t border-outline-variant/60 pt-space-sm">
+<a class="flex items-center gap-space-sm px-space-md py-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="font-body-sm text-body-sm">Documentation</span>
+</a>
+<a class="flex items-center gap-space-sm px-space-md py-space-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container rounded-lg transition-colors duration-150" href="#">
+<span class="material-symbols-outlined">tune</span>
+<span class="font-body-sm text-body-sm">System Status</span>
+<span class="ml-auto font-label-code-sm text-label-code-sm text-secondary font-medium">99.98%</span>
+</a>
+<div class="mt-2 p-2 rounded bg-surface-container-low border border-outline-variant">
+<div class="flex items-center justify-between text-label-code-sm font-label-code-sm text-on-surface-variant">
+<span>LLM Parser Engine</span>
+<span class="text-secondary font-semibold">ONLINE</span>
+</div>
+<div class="w-full bg-outline-variant/40 h-1 rounded mt-1.5 overflow-hidden">
+<div class="bg-primary-container h-full w-[88%]"></div>
+</div>
+</div>
+</div>
+</aside>
+<!-- MAIN COCKPIT: SIDE-BY-SIDE SPLIT WORKSPACE -->
+<main class="flex-1 flex overflow-hidden bg-surface">
+<!-- LEFT COLUMN: INTERACTIVE BLUEPRINT HUD (60% width) -->
+<section class="w-[60%] flex flex-col border-r border-outline-variant bg-surface-container-lowest relative select-none">
+<!-- Viewer Top Toolbar -->
+<div class="h-10 px-3 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest z-20">
+<!-- Sheet Navigation & Page Count -->
+<div class="flex items-center gap-space-sm">
+<div class="flex items-center rounded border border-outline-variant overflow-hidden">
+<button class="px-2 py-1 hover:bg-surface-container-low transition-colors text-on-surface border-r border-outline-variant" title="Previous Sheet">
+<span class="material-symbols-outlined text-[15px]">chevron_left</span>
+</button>
+<div class="px-2.5 py-0.5 bg-surface-container-low font-label-code-md text-label-code-md text-on-surface font-medium">
+                Sheet 1 of 2
+              </div>
+<button class="px-2 py-1 hover:bg-surface-container-low transition-colors text-on-surface" title="Next Sheet">
+<span class="material-symbols-outlined text-[15px]">chevron_right</span>
+</button>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant bg-surface-container px-1.5 py-0.5 rounded">
+              DWG: RAY-8492-D-TOP.PDF
+            </span>
+</div>
+<!-- Zoom & Pan Controls -->
+<div class="flex items-center gap-1 bg-surface-container-low p-0.5 rounded border border-outline-variant">
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface" title="Zoom Out">
+<span class="material-symbols-outlined text-[16px]">zoom_out</span>
+</button>
+<span class="font-label-code-sm text-label-code-sm text-on-surface font-semibold px-1.5">125%</span>
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant hover:text-on-surface" title="Zoom In">
+<span class="material-symbols-outlined text-[16px]">zoom_in</span>
+</button>
+<span class="h-3 w-px bg-outline-variant mx-0.5"></span>
+<button class="px-1.5 py-0.5 hover:bg-surface-container rounded font-label-code-sm text-label-code-sm text-on-surface-variant" title="Fit Screen">
+              FIT
+            </button>
+<button class="p-1 hover:bg-surface-container rounded text-on-surface-variant" title="Pan Hand Tool">
+<span class="material-symbols-outlined text-[16px]">pan_tool</span>
+</button>
+</div>
+<!-- CAD Layer Toggles -->
+<div class="flex items-center gap-1">
+<label class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-primary font-label-code-sm text-label-code-sm cursor-pointer border border-primary/20">
+<input checked="" class="w-3 h-3 rounded text-primary border-outline focus:ring-0" type="checkbox"/>
+<span>Datum Planes</span>
+</label>
+<label class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-surface-container text-primary font-label-code-sm text-label-code-sm cursor-pointer border border-primary/20">
+<input checked="" class="w-3 h-3 rounded text-primary border-outline focus:ring-0" type="checkbox"/>
+<span>GD&amp;T</span>
+</label>
+<label class="flex items-center gap-1 px-1.5 py-0.5 rounded hover:bg-surface-container-low text-on-surface-variant font-label-code-sm text-label-code-sm cursor-pointer border border-outline-variant">
+<input checked="" class="w-3 h-3 rounded text-primary border-outline focus:ring-0" type="checkbox"/>
+<span>Title Block</span>
+</label>
+</div>
+</div>
+<!-- Technical Blueprint Canvas -->
+<div class="flex-1 relative overflow-hidden technical-grid technical-subgrid flex items-center justify-center p-6 bg-surface-container-lowest">
+<!-- Vector Technical Drawing Representation -->
+<div class="relative w-[540px] h-[400px] border-2 border-on-surface/80 bg-surface-container-lowest/90 shadow-sm p-4">
+<!-- Drawing Watermark / Header -->
+<div class="absolute top-2 left-2 flex items-center gap-2 text-outline font-label-code-sm text-label-code-sm">
+<span>SCALE: 1:2</span>
+<span>•</span>
+<span>UNITS: INCHES</span>
+<span>•</span>
+<span>THIRD ANGLE PROJECTION</span>
+</div>
+<!-- Geometric Precision Bracket Drawing Elements -->
+<svg class="w-full h-full" fill="none" viewbox="0 0 500 360" xmlns="http://www.w3.org/2000/svg">
+<!-- Center Axis Guideline Lines -->
+<line stroke="#737688" stroke-dasharray="8 4 2 4" stroke-width="0.75" x1="20" x2="480" y1="180" y2="180"></line>
+<line stroke="#737688" stroke-dasharray="8 4 2 4" stroke-width="0.75" x1="250" x2="250" y1="20" y2="340"></line>
+<!-- Main Machined Bracket Outline -->
+<path d="M 70 80 L 430 80 L 430 260 L 370 260 L 370 200 L 130 200 L 130 260 L 70 260 Z" fill="#faf8ff" fill-opacity="0.6" stroke="#131b2e" stroke-width="2.5"></path>
+<!-- Chamfers & Interior Pocket Cutouts -->
+<rect fill="none" height="70" rx="4" stroke="#131b2e" stroke-width="1.75" width="200" x="150" y="100"></rect>
+<line stroke="#131b2e" stroke-width="2" x1="150" x2="160" y1="100" y2="100"></line>
+<!-- Bolt Bore Holes (GD&T Target) -->
+<circle cx="100" cy="140" fill="none" r="16" stroke="#131b2e" stroke-width="1.75"></circle>
+<circle cx="100" cy="140" r="8" stroke="#131b2e" stroke-dasharray="3 3" stroke-width="1"></circle>
+<circle cx="400" cy="140" fill="none" r="16" stroke="#131b2e" stroke-width="1.75"></circle>
+<circle cx="400" cy="140" r="8" stroke="#131b2e" stroke-dasharray="3 3" stroke-width="1"></circle>
+<!-- Datum [-A-] Target Reference Marker -->
+<rect fill="#eaedff" height="20" stroke="#003ec7" stroke-width="1.5" width="36" x="58" y="270"></rect>
+<text fill="#003ec7" font-family="JetBrains Mono" font-size="11" font-weight="600" x="64" y="284">- A -</text>
+<line stroke="#003ec7" stroke-width="1.5" x1="76" x2="76" y1="260" y2="270"></line>
+<!-- Dimension 1: Length 7.875 ±0.005 -->
+<line stroke="#003ec7" stroke-width="1.25" x1="70" x2="430" y1="50" y2="50"></line>
+<polygon fill="#003ec7" points="70,50 78,47 78,53"></polygon>
+<polygon fill="#003ec7" points="430,50 422,47 422,53"></polygon>
+<line stroke="#737688" stroke-width="1" x1="70" x2="70" y1="45" y2="78"></line>
+<line stroke="#737688" stroke-width="1" x1="430" x2="430" y1="45" y2="78"></line>
+<rect fill="#ffffff" height="18" stroke="#c3c5d9" stroke-width="0.75" width="90" x="205" y="40"></rect>
+<text fill="#003ec7" font-family="JetBrains Mono" font-size="10" font-weight="600" x="212" y="53">7.875 ±0.005</text>
+<!-- Dimension 2: Pocket Height 4.500 -->
+<line stroke="#737688" stroke-width="1.25" x1="455" x2="455" y1="80" y2="260"></line>
+<polygon fill="#737688" points="455,80 452,88 458,88"></polygon>
+<polygon fill="#737688" points="455,260 452,252 458,252"></polygon>
+<rect fill="#ffffff" height="18" stroke="#c3c5d9" stroke-width="0.75" width="54" x="442" y="160"></rect>
+<text fill="#131b2e" font-family="JetBrains Mono" font-size="10" font-weight="600" x="448" y="173">4.500</text>
+<!-- Hole Callout Dimension -->
+<path d="M 112 130 L 145 105 L 195 105" fill="none" stroke="#737688" stroke-width="1.25"></path>
+<polygon fill="#737688" points="112,130 115,124 120,128"></polygon>
+<text fill="#131b2e" font-family="JetBrains Mono" font-size="9" font-weight="500" x="145" y="98">2X Ø 0.750 THRU</text>
+<text fill="#737688" font-family="JetBrains Mono" font-size="8" font-weight="500" x="145" y="108">⌖ 0.002 Ⓜ | A | B</text>
+<!-- Title Block Corner Box -->
+<g transform="translate(340, 280)">
+<rect fill="#faf8ff" height="70" stroke="#737688" stroke-width="1.25" width="150" x="0" y="0"></rect>
+<line stroke="#737688" stroke-width="0.75" x1="0" x2="150" y1="22" y2="22"></line>
+<line stroke="#737688" stroke-width="0.75" x1="0" x2="150" y1="46" y2="46"></line>
+<line stroke="#737688" stroke-width="0.75" x1="75" x2="75" y1="46" y2="70"></line>
+<text fill="#131b2e" font-family="JetBrains Mono" font-size="8" font-weight="600" x="6" y="15">RAYTHEON MISSILES &amp; DEFENSE</text>
+<text fill="#434656" font-family="JetBrains Mono" font-size="8" x="6" y="34">DWG: 8492-RAY-BRKT-REV-D</text>
+<text fill="#ba1a1a" font-family="JetBrains Mono" font-size="7" x="6" y="42">MATL: SST 316 (TEMPER UNSTATED)</text>
+<text fill="#737688" font-family="JetBrains Mono" font-size="7" x="6" y="60">CAGE: 06849</text>
+<text fill="#737688" font-family="JetBrains Mono" font-size="7" x="82" y="60">SHEET 1 OF 2</text>
+</g>
+</svg>
+<!-- TACTILE INTERACTIVE PIN #1: Material Temper Ambiguity -->
+<div class="absolute top-[68%] left-[72%] -translate-x-1/2 -translate-y-1/2 cursor-pointer group z-30">
+<div class="relative flex items-center">
+<span class="flex h-6 w-6 relative items-center justify-center">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-error opacity-75"></span>
+<span class="relative inline-flex rounded-full h-5 w-5 bg-error text-on-error font-label-code-sm text-label-code-sm font-bold items-center justify-center shadow-md">#1</span>
+</span>
+<div class="ml-2 px-2 py-1 rounded bg-inverse-surface text-inverse-on-surface font-label-code-sm text-label-code-sm whitespace-nowrap shadow-lg flex items-center gap-1 border border-outline/50">
+<span class="w-1.5 h-1.5 rounded-full bg-error"></span>
+<span class="font-bold">#1 Material Temper Ambiguity</span>
+<span class="text-error-container font-medium">±$1,200</span>
+</div>
+</div>
+</div>
+<!-- TACTILE INTERACTIVE PIN #2: Tolerance Conflict -->
+<div class="absolute top-[28%] left-[24%] -translate-x-1/2 -translate-y-1/2 cursor-pointer group z-30">
+<div class="relative flex items-center">
+<span class="flex h-6 w-6 relative items-center justify-center">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-tertiary-container opacity-75"></span>
+<span class="relative inline-flex rounded-full h-5 w-5 bg-tertiary-container text-on-tertiary font-label-code-sm text-label-code-sm font-bold items-center justify-center shadow-md">#2</span>
+</span>
+<div class="ml-2 px-2 py-1 rounded bg-inverse-surface text-inverse-on-surface font-label-code-sm text-label-code-sm whitespace-nowrap shadow-lg flex items-center gap-1 border border-outline/50">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed"></span>
+<span class="font-bold">#2 Tolerance Conflict (±0.0005")</span>
+<span class="text-tertiary-fixed font-medium">Bore Axis</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Bottom HUD Metadata Pill Overlay -->
+<div class="absolute bottom-3 left-4 right-4 flex items-center justify-between px-3 py-1.5 rounded bg-surface-container-lowest/95 backdrop-blur border border-outline-variant shadow-sm z-20">
+<div class="flex items-center gap-space-md font-label-code-sm text-label-code-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="text-on-surface-variant">OCR Confidence:</span>
+<span class="text-secondary font-bold">99.4%</span>
+</div>
+<span class="text-outline-variant">|</span>
+<div class="flex items-center gap-1">
+<span class="text-on-surface-variant">Part:</span>
+<span class="text-on-surface font-semibold">#8492-RAY-BRKT</span>
+</div>
+<span class="text-outline-variant">|</span>
+<div class="flex items-center gap-1">
+<span class="text-on-surface-variant">Material:</span>
+<span class="text-error font-bold flex items-center gap-0.5">
+                  SST 316
+                  <span class="material-symbols-outlined text-[13px]">warning</span>
+</span>
+</div>
+</div>
+<div class="flex items-center gap-space-sm font-label-code-sm text-label-code-sm text-on-surface-variant">
+<span>Raster Scan: 600 DPI</span>
+<span>•</span>
+<span class="text-primary font-medium cursor-pointer hover:underline">Re-run Engine (v4.2)</span>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT COLUMN: ZERO-ASSUMPTIONS CLARIFICATION & BOM MATCH (40% width) -->
+<section class="w-[40%] flex flex-col bg-background h-full overflow-hidden select-none">
+<!-- Header Strip -->
+<div class="h-10 px-4 border-b border-outline-variant flex items-center justify-between bg-surface-container-lowest flex-shrink-0">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[17px]">gavel</span>
+<span class="font-headline-sm text-headline-sm text-on-surface font-semibold">Zero-Assumptions Clarification</span>
+</div>
+<span class="px-2 py-0.5 rounded bg-error-container text-on-error-container font-label-code-sm text-label-code-sm font-semibold">
+            Action Required (2)
+          </span>
+</div>
+<!-- Scrollable Content Stack -->
+<div class="flex-1 overflow-y-auto p-3 space-y-3">
+<!-- Alert Banner: AI Will Not Guess -->
+<div class="p-2.5 rounded bg-amber-50 border border-amber-200 flex items-start gap-2.5">
+<span class="material-symbols-outlined text-tertiary text-[20px] flex-shrink-0 mt-0.5">shield_with_heart</span>
+<div class="flex-1">
+<div class="font-headline-sm text-[13px] text-tertiary font-bold leading-tight">
+                2 Ambiguous Specs Detected
+              </div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                AI will <strong class="text-on-surface font-semibold">NOT guess</strong> without shop signoff. Preventing unbudgeted tooling and high-alloy scrap charges.
+              </p>
+</div>
+</div>
+<!-- CARD #1: Material Temper / Condition Ambiguity -->
+<div class="rounded bg-surface-container-lowest border border-outline-variant p-3 shadow-sm hover:border-primary/40 transition-colors">
+<!-- Card Header -->
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded-full bg-error text-on-error flex items-center justify-center font-label-code-sm text-label-code-sm font-bold">1</span>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold leading-tight">
+                    Material Temper / Condition Ambiguity
+                  </h3>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Drawing specifies SST 316 without temper callout</span>
+</div>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-error-container/40 text-error font-label-code-sm text-label-code-sm font-bold">
+                Variance: ±$1,200
+              </span>
+</div>
+<!-- Context Snippet -->
+<div class="mt-2.5 p-2 rounded bg-surface-container-low font-label-code-sm text-label-code-sm text-on-surface-variant border border-outline-variant/60">
+<div class="flex items-center justify-between text-on-surface font-medium">
+<span>Extracted Callout:</span>
+<span class="text-error font-semibold">"MATL: SST 316 PER ASTM A276"</span>
+</div>
+<div class="mt-0.5 text-[11px] text-outline">
+                Missing explicit condition: Annealed vs Condition B vs Strain Hardened. Machine speeds deviate up to 40 SFM.
+              </div>
+</div>
+<!-- Tactile Radio Choice Buttons -->
+<div class="mt-2.5 space-y-1.5">
+<!-- Option A (Recommended) -->
+<label class="flex items-start gap-2.5 p-2 rounded border-2 border-primary bg-surface-container-high/40 cursor-pointer">
+<input checked="" class="mt-0.5 text-primary focus:ring-0" name="temper_choice" type="radio"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface font-semibold">Option A: 316L Annealed</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-bold">$2,450.00</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5 font-label-code-sm text-label-code-sm text-on-surface-variant">
+<span class="text-secondary font-medium">In-Stock: 480 ft (Shop Rack #4)</span>
+<span>•</span>
+<span>Standard Machinability (100%)</span>
+</div>
+</div>
+<span class="px-1.5 py-0.2 rounded bg-secondary-container text-on-secondary-container font-label-code-sm text-[10px] font-bold uppercase">Shop Pick</span>
+</label>
+<!-- Option B -->
+<label class="flex items-start gap-2.5 p-2 rounded border border-outline-variant hover:bg-surface-container-low cursor-pointer transition-colors">
+<input class="mt-0.5 text-primary focus:ring-0" name="temper_choice" type="radio"/>
+<div class="flex-1">
+<div class="flex items-center justify-between">
+<span class="font-body-sm text-body-sm text-on-surface font-semibold">Option B: Condition B Cold Drawn</span>
+<span class="font-label-code-sm text-label-code-sm text-tertiary font-bold">$3,650.00</span>
+</div>
+<div class="flex items-center gap-2 mt-0.5 font-label-code-sm text-label-code-sm text-on-surface-variant">
+<span class="text-error font-medium">+22% machining cycle time</span>
+<span>•</span>
+<span>Lead time: 5 business days</span>
+</div>
+</div>
+</label>
+</div>
+<!-- Clarification Email Action -->
+<div class="mt-2.5 pt-2 border-t border-outline-variant/60 flex items-center justify-between">
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Buyer contact: m.chen@raytheon.com</span>
+<button class="flex items-center gap-1 px-2.5 py-1 rounded bg-surface-container hover:bg-surface-variant text-primary font-body-sm text-body-sm font-semibold transition-colors duration-150">
+<span class="material-symbols-outlined text-[15px]">mail</span>
+<span>Generate 1-Click Clarification Email</span>
+</button>
+</div>
+</div>
+<!-- CARD #2: Tolerance Conflict on Unground Stock -->
+<div class="rounded bg-surface-container-lowest border border-outline-variant p-3 shadow-sm hover:border-primary/40 transition-colors">
+<!-- Card Header -->
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-1.5">
+<span class="w-5 h-5 rounded-full bg-tertiary-container text-on-tertiary flex items-center justify-center font-label-code-sm text-label-code-sm font-bold">2</span>
+<div>
+<h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold leading-tight">
+                    Tolerance Conflict on Unground Stock
+                  </h3>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">Hole Bore Axis 7.875 specifies ±0.0005"</span>
+</div>
+</div>
+<span class="px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant font-label-code-sm text-label-code-sm font-bold">
+                Milling Limit
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-2">
+              Tolerance exceeds 3-axis standard milling capability (<span class="font-label-code-sm text-label-code-sm font-semibold text-on-surface">±0.0015"</span>). Requires specialized secondary jig boring pass or buyer relaxation.
+            </p>
+<!-- Action Choice Split Buttons -->
+<div class="grid grid-cols-2 gap-2 mt-2.5">
+<button class="flex flex-col items-start p-2 rounded border border-outline-variant bg-surface-container-low hover:border-primary hover:bg-surface-container transition-colors text-left">
+<span class="font-body-sm text-body-sm text-on-surface font-semibold">Add Jig Bore Pass</span>
+<span class="font-label-code-sm text-label-code-sm text-primary font-bold mt-0.5">+$35.00 / piece</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant text-[10px]">Maintains 0.0005" True Pos</span>
+</button>
+<button class="flex flex-col items-start p-2 rounded border border-outline-variant bg-surface-container-low hover:border-primary hover:bg-surface-container transition-colors text-left">
+<span class="font-body-sm text-body-sm text-on-surface font-semibold">Request Tolerance Relief</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-bold mt-0.5">Relax to ±0.002"</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant text-[10px]">Zero cost added to buyer</span>
+</button>
+</div>
+</div>
+<!-- CARD #3: Extracted BOM & Material Stock Verification -->
+<div class="rounded bg-surface-container-lowest border border-outline-variant p-3 shadow-sm">
+<div class="flex items-center justify-between mb-2">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-secondary text-[18px]">verified</span>
+<h4 class="font-headline-sm text-headline-sm text-on-surface font-semibold">Certified Mill Stock Match</h4>
+</div>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-semibold">ASTM A276/A479 Verified</span>
+</div>
+<div class="border border-outline-variant/70 rounded overflow-hidden">
+<table class="w-full text-left font-label-code-sm text-label-code-sm">
+<thead class="bg-surface-container-low border-b border-outline-variant text-on-surface-variant">
+<tr>
+<th class="py-1 px-2 font-medium">Mill Source</th>
+<th class="py-1 px-2 font-medium">Dimensions</th>
+<th class="py-1 px-2 font-medium">Lot Cert</th>
+<th class="py-1 px-2 font-medium text-right">Unit Rate</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40 bg-surface-container-lowest">
+<tr>
+<td class="py-1.5 px-2 text-on-surface font-medium">TitaniumMet USA</td>
+<td class="py-1.5 px-2 text-on-surface-variant">3.5" x 6.0" Flat Bar</td>
+<td class="py-1.5 px-2 text-secondary font-semibold">MTR on file</td>
+<td class="py-1.5 px-2 text-right text-on-surface">$14.20 / lb</td>
+</tr>
+<tr>
+<td class="py-1.5 px-2 text-on-surface font-medium">Wieland Metals</td>
+<td class="py-1.5 px-2 text-on-surface-variant">Round 4.250" Billet</td>
+<td class="py-1.5 px-2 text-secondary font-semibold">DFARS Compliant</td>
+<td class="py-1.5 px-2 text-right text-on-surface">$16.85 / lb</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- STICKY BOTTOM ESTIMATION SUMMARY & ACTION FOOTER -->
+<div class="border-t border-outline-variant bg-surface-container-lowest p-3 flex-shrink-0 shadow-lg">
+<div class="flex items-center justify-between mb-2">
+<div>
+<div class="font-label-code-sm text-label-code-sm text-on-surface-variant">Current Estimated Lot Total (Qty: 250 pcs)</div>
+<div class="flex items-baseline gap-2">
+<span class="font-headline-xl text-headline-xl font-bold text-on-surface tracking-tight">$32,680.00</span>
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant">($130.72 / unit)</span>
+<span class="px-1.5 py-0.5 rounded bg-secondary-container text-on-secondary-container font-label-code-sm text-label-code-sm font-bold">Margin 34.2%</span>
+</div>
+</div>
+<!-- Health Indicator Mini Spark-pill -->
+<div class="text-right">
+<span class="font-label-code-sm text-label-code-sm text-on-surface-variant block">Clarification Impact</span>
+<span class="font-label-code-sm text-label-code-sm text-secondary font-bold">Risk Hedged: +$2,450</span>
+</div>
+</div>
+<!-- Prominent CTA Action -->
+<div class="flex items-center gap-2">
+<button class="px-3 py-2 rounded border border-outline-variant hover:bg-surface-container text-on-surface font-body-sm text-body-sm font-medium transition-colors">
+              Save Draft
+            </button>
+<button class="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded bg-primary text-on-primary hover:bg-primary-container font-headline-sm text-headline-sm font-semibold transition-all shadow-sm active:scale-[0.99]">
+<span>Proceed to Quote Builder</span>
+<span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+</div>
+</body></html>

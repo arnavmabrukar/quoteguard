@@ -19,6 +19,7 @@ import { nicrronCompletion } from "@/server/integrations/nicrron";
 import { emitTrace, prismCapabilities } from "@/server/integrations/prism";
 import type { CatalogItem, Rfq } from "@/domain/types";
 import { parseSpec } from "@/domain/extract-demo";
+import { blankDxf, blankStep, buildBlank } from "@/domain/blank-cad";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 const json = (data: unknown, status = 200) =>
@@ -117,6 +118,46 @@ async function handler(
             "Content-Type": "text/csv; charset=utf-8",
             "Cache-Control": "private, no-store",
             "Content-Disposition": `attachment; filename="${quote.id}-${quote.status}.csv"`,
+          },
+        });
+      }
+      if (parts[0] === "rfqs" && parts[2] === "cad" && parts.length === 3) {
+        const w = await getWorkspace(parts[1]);
+        if (!w.rfq.approvedVersion)
+          throw new AppError(
+            409,
+            "NOT_APPROVED",
+            "CAD export requires an approved quote.",
+          );
+        const params = req.nextUrl.searchParams;
+        const format = params.get("format") === "step" ? "step" : "dxf";
+        const number = Number(params.get("line"));
+        // w.quote is the immutable approved snapshot; draft edits cannot leak in.
+        const quoted = w.quote.lines.find((l) => l.number === number);
+        if (!quoted?.sku)
+          throw new AppError(404, "NOT_FOUND", "Approved quote line not found.");
+        const built = buildBlank(
+          w.catalog.find((c) => c.sku === quoted.sku) || null,
+        );
+        if (!built.ok)
+          throw new AppError(
+            422,
+            "CAD_INCOMPLETE",
+            `Cannot build blank; missing: ${built.missing.join(", ")}.`,
+          );
+        const demo = w.quote.demo;
+        const body =
+          format === "step"
+            ? blankStep(built.blank, demo)
+            : blankDxf(built.blank, demo);
+        const safeSku = built.blank.sku.replace(/[^A-Za-z0-9_-]/g, "_");
+        return new NextResponse(body, {
+          headers: {
+            "Content-Type":
+              format === "step" ? "model/step" : "application/dxf",
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Disposition": `attachment; filename="${safeSku}-blank.${format === "step" ? "step" : "dxf"}"`,
           },
         });
       }
